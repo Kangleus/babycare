@@ -1,9 +1,12 @@
 /* 手机外框元素：状态栏（仅 Web 演示）、顶部渐隐、Toast */
 import { Platform, StyleSheet, View } from 'react-native';
-import Svg, { Defs, LinearGradient, Rect, Stop, SvgXml } from 'react-native-svg';
+import Svg, { Circle, Defs, LinearGradient, RadialGradient, Rect, Stop, SvgXml } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '@/state/app-state';
 import { Txt } from './txt';
+import { Tuan } from '@/lib/svg';
+import { useLvAcc } from '@/state/hooks';
+import { hhmm } from '@/lib/time';
 
 /* 原型 init() 里 #sbIcons 的信号 + 电池 */
 const SIGNAL = `<svg width="18" height="12" viewBox="0 0 18 12"><rect x="0" y="8" width="3" height="4" rx="1" fill="currentColor"/><rect x="5" y="5.5" width="3" height="6.5" rx="1" fill="currentColor"/><rect x="10" y="3" width="3" height="9" rx="1" fill="currentColor"/><rect x="15" y="0" width="3" height="12" rx="1" fill="currentColor"/></svg>`;
@@ -14,11 +17,11 @@ export const IS_WEB = Platform.OS === 'web';
 export function useTopPad() { const i = useSafeAreaInsets(); return IS_WEB ? 76 : i.top + 26; }
 
 export function StatusBarMock() {
-  const { p } = useApp();
+  const { p, now } = useApp();
   if (!IS_WEB) return null;
   return (
     <View pointerEvents="none" style={s.status}>
-      <Txt f="b8" size={15}>10:20</Txt>
+      <Txt f="b8" size={15}>{hhmm(now)}</Txt>
       <View style={s.r}><SvgXml xml={SIGNAL} width={18} height={12} color={p.ink} /><SvgXml xml={BATTERY} width={26} height={13} color={p.ink} /></View>
     </View>
   );
@@ -48,7 +51,42 @@ export function Toast() {
   );
 }
 
+/* 记好后的庆祝 —— 原型 .cele（veil + halo + say 气泡 + 团团点头）和 .xp-fly「+1 成长值」 */
+export function Cele() {
+  const { p, cele } = useApp(); const acc = useLvAcc();
+  if (!cele) return null;
+  return (
+    <View pointerEvents="none" style={s.cele} testID="cele">
+      <View style={[s.veil, { backgroundColor: p.bg }]} />
+      <View style={s.wrap}>
+        <Svg width={250} height={250} style={s.halo}>
+          <Defs><RadialGradient id="halo" cx="50%" cy="50%" r="50%"><Stop offset="0" stopColor="#FFD45C" stopOpacity={0.75} /><Stop offset="0.65" stopColor="#FFD45C" stopOpacity={0} /></RadialGradient></Defs>
+          <Circle cx={125} cy={125} r={125} fill="url(#halo)" />
+        </Svg>
+        <View style={s.sayRow}>
+          <View style={[s.say, { backgroundColor: p.card, borderColor: p.ink }, { boxShadow: `0px 4px 0px ${p.shadow}` }]}>
+            <Txt f="h" size={22}>{cele.say}</Txt>{cele.extra ? <Txt f="b9" size={18}>{cele.extra}</Txt> : null}
+            <View style={[s.tail, { backgroundColor: p.card, borderColor: p.ink }]} />
+          </View>
+        </View>
+        <View style={s.tuan}><Tuan mood={cele.calm ? 'idle' : 'happy'} acc={acc} size={160} /></View>
+      </View>
+      <View style={s.xpRow}><View style={[s.xp, { backgroundColor: p.green, borderColor: p.ink }, { boxShadow: `0px 3px 0px ${p.shadow}` }]}><Txt f="b9" size={15}>+1 成长值</Txt></View></View>
+    </View>
+  );
+}
+
 const s = StyleSheet.create({
+  cele: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 120 },
+  veil: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.72 },
+  wrap: { position: 'absolute', left: '50%', top: '44%', width: 220, height: 240, marginLeft: -110, marginTop: -120 },
+  halo: { position: 'absolute', left: -15, top: 9 },
+  sayRow: { position: 'absolute', left: -60, right: -60, top: 0, alignItems: 'center' },
+  say: { flexDirection: 'row', gap: 6, alignItems: 'center', borderWidth: 3, borderRadius: 22, paddingVertical: 8, paddingHorizontal: 16 },
+  tail: { position: 'absolute', left: '50%', bottom: -11, width: 16, height: 16, marginLeft: -8, borderRightWidth: 3, borderBottomWidth: 3, borderBottomRightRadius: 4, transform: [{ rotate: '45deg' }] },
+  tuan: { position: 'absolute', left: 30, top: 50, width: 160, height: 160 },
+  xpRow: { position: 'absolute', left: 0, right: 0, top: '62%', alignItems: 'center' },
+  xp: { borderWidth: 2.5, borderRadius: 99, paddingVertical: 3, paddingHorizontal: 10 },
   status: { position: 'absolute', top: 0, left: 0, right: 0, height: 50, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 6, paddingRight: 30, paddingLeft: 34, zIndex: 150 },
   r: { flexDirection: 'row', gap: 6, alignItems: 'center' },
   fade: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 90 },

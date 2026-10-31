@@ -1,43 +1,9 @@
-/* 本地演示数据（与原型 app2/app5 的 S.events / S.reminders 一致）。M2 起换成云端数据。 */
+/* 静态目录 / 演示文案（记录数据见 seed.ts，存储见 repo.ts） */
 import type { IconName } from '@/lib/art';
 import type { Kind } from '@/theme/tokens';
 
-export const BABY = { name: '豆米', birth: new Date(2026, 2, 28) };
-/* 演示「今天」：2026-10-31（周六）10:20，与原型一致 */
-export const DEMO_DAY = new Date(2026, 9, 31);
-export const NOW = 10 * 60 + 20;
-
-export function ageText(birth = BABY.birth, today = DEMO_DAY) {
-  let m = (today.getFullYear() - birth.getFullYear()) * 12 + today.getMonth() - birth.getMonth();
-  let d = today.getDate() - birth.getDate();
-  if (d < 0) { m -= 1; d += new Date(today.getFullYear(), today.getMonth(), 0).getDate(); }
-  const wk = '日一二三四五六'[today.getDay()];
-  return `${m} 个月 ${d} 天 · 周${wk}`;
-}
-
-export type Src = 'voice' | 'manual';
-export type Ev = {
-  id: number; type: Kind; start: string; end?: string; by: string; src: Src; cont?: boolean;
-  sub?: 'formula' | 'bm' | 'breast' | 'pee' | 'poop' | 'both'; ml?: number; v?: number; site?: string;
-  name?: string; times?: number; cm?: number; kg?: number; mins?: number;
-};
-
-export const EVENTS: Ev[] = [
-  { id: 1, type: 'sleep', start: '00:00', end: '01:15', by: '妈妈', src: 'voice', cont: true },
-  { id: 2, type: 'feed', sub: 'formula', ml: 180, start: '01:20', by: '妈妈', src: 'voice' },
-  { id: 3, type: 'sleep', start: '01:40', end: '04:15', by: '妈妈', src: 'voice' },
-  { id: 4, type: 'diaper', sub: 'pee', start: '04:20', by: '妈妈', src: 'manual' },
-  { id: 5, type: 'feed', sub: 'formula', ml: 160, start: '04:30', by: '妈妈', src: 'voice' },
-  { id: 6, type: 'sleep', start: '04:50', end: '07:20', by: '爸爸', src: 'voice' },
-  { id: 7, type: 'diaper', sub: 'both', start: '07:25', by: '爸爸', src: 'manual' },
-  { id: 8, type: 'feed', sub: 'formula', ml: 170, start: '07:40', by: '爸爸', src: 'voice' },
-  { id: 11, type: 'temp', v: 36.9, site: '腋温', start: '07:30', by: '爸爸', src: 'manual' },
-  { id: 9, type: 'sleep', start: '08:20', end: '09:35', by: '奶奶', src: 'voice' },
-  { id: 12, type: 'water', ml: 20, start: '09:05', by: '奶奶', src: 'manual' },
-  { id: 10, type: 'diaper', sub: 'pee', start: '09:40', by: '奶奶', src: 'manual' },
-];
-
 export type Reminder = { id: number; cat: 'med' | 'visit' | 'vax' | 'check'; t: string; when: string; rep?: string; note?: string; done?: boolean };
+/* 提醒在 M4 接入；首页「吃药 · 下次 10:30」暂用原型的演示提醒 */
 export const REMINDERS: Reminder[] = [
   { id: 1, cat: 'med', t: '喂维生素 D', when: '今天 10:30', rep: '每天', note: '妈妈设置' },
   { id: 2, cat: 'vax', t: '流感疫苗 第 2 剂', when: '11/3 周二 09:00', note: '社区卫生服务中心 · 带接种本' },
@@ -46,9 +12,18 @@ export const REMINDERS: Reminder[] = [
   { id: 5, cat: 'visit', t: '急疹后复查', when: '10/22 周四', done: true, note: '医生说恢复得很好（家长转述）' },
 ];
 
-export const SAMPLES = [
-  '十点喝了 120 毫升奶，拉了一次', '刚喂了一瓶奶', '刚刚睡着了', '九点五十换了尿布，尿了', '刚才那次是 150 不是 120',
-  '刚喝了 30 毫升水', '38度5，刚吃了一次退烧药', '脸上起了几个小红点', '明天下午三点提醒我喂药', '下周二打疫苗',
+/* 原型 app2 SAMPLES（含 app5 分组） */
+export const SAMPLES: { text: string; note: string; g?: string }[] = [
+  { text: '十点喝了 120 毫升奶，拉了一次', note: '一句话 → 拆成 2 条记录' },
+  { text: '刚喂了一瓶奶', note: '缺少奶量 → 团团追问一句' },
+  { text: '刚刚睡着了', note: '生成「进行中」的睡眠' },
+  { text: '九点五十换了尿布，尿了', note: '口语时间解析' },
+  { text: '刚才那次是 150 不是 120', note: '一句话修改上一条' },
+  { text: '刚喝了 30 毫升水', note: '喝水 · 首页喝水卡同步' },
+  { text: '38度5，刚吃了一次退烧药', note: '体温 + 用药 · 只记你说的', g: '健康' },
+  { text: '脸上起了几个小红点', note: '症状 · 只记录不判断', g: '健康' },
+  { text: '明天下午三点提醒我喂药', note: '创建用药提醒', g: '提醒' },
+  { text: '下周二打疫苗', note: '创建疫苗提醒', g: '提醒' },
 ];
 
 /* 卡片目录（原型 app6 CARDS） */

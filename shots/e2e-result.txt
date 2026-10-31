@@ -1,0 +1,69 @@
+/workspace/yijuji-app/tools/e2e.py:14: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use get_flattened_data instead.
+  d=ImageChops.difference(A,B.resize(A.size)).convert('L');px=sum(1 for v in d.getdata() if v>40)
+PASS onboarding: consent page shown on first run
+PASS consent: continue disabled until checked
+PASS onboarding: profile page
+PASS profile: invalid birthday blocks submit
+PASS home after onboarding
+PASS age line computed from birthday
+m1/compare-home.png differing px (>40): 2.74%
+m1/compare-home-scrolled.png differing px (>40): 10.67%
+PASS sample pill below hint & above 今日时间线 (no overlap) — ({'y': 688.875, 'height': 16}, {'y': 716.875, 'height': 36}, {'y': 769.875, 'height': 15})
+PASS feed: quick-record sheet opens
+PASS feed: timeline +1 — (12, 13)
+PASS feed: card updated — ('510ml', '喂奶 3 次', '→', '700ml', '喂奶 4 次')
+PASS greeting stats updated (4 顿奶) — 早上好呀！豆米今天喝了 4 顿奶，睡了 7h35m 啦
+PASS sleep: quick-record sheet opens
+PASS sleep: timeline +1 — (13, 14)
+PASS sleep: card updated — ('7.6h', '睡眠', '→', '8.3h', '睡眠')
+PASS diaper: quick-record sheet opens
+PASS diaper: timeline +1 — (14, 15)
+PASS diaper: card updated — ('3次', '换尿布', '→', '4次', '换尿布')
+PASS water: quick-record sheet opens
+PASS water: timeline +1 — (15, 16)
+PASS water: card updated — ('20ml', '喝水 1 次', '→', '50ml', '喝水 2 次')
+PASS med: quick-record sheet opens
+PASS med: timeline +1 — (16, 17)
+PASS med: card updated — ('0次', '吃药 · 下次 10:30', '→', '1次', '吃药 · 下次 10:30')
+PASS temp: quick-record sheet opens
+PASS temp: timeline +1 — (17, 18)
+PASS temp: card updated — ('36.9℃', '07:30', '→', '38.3℃', '10:20')
+PASS temp card shows 偏高
+lvl 团团 Lv.3 → 团团 Lv.3
+PASS records show who recorded (妈妈记)
+PASS tap timeline → edit sheet
+PASS edit saved (note in timeline)
+PASS swipe-left delete asks confirm
+PASS delete removes record — (18, 17)
+PASS tap card → trend sheet
+PASS card pee on home
+PASS card symptom on home
+PASS card growth on home
+PASS pee: quick-record sheet opens
+PASS pee: timeline +1 — (17, 18)
+PASS pee: card updated — ('4次', '尿尿', '→', '5次', '尿尿')
+PASS symptom: quick-record sheet opens
+PASS symptom: timeline +1 — (18, 19)
+PASS symptom: card updated — ('0条', '症状 · 今天没有', '→', '1条', '咳嗽')
+PASS growth: quick-record sheet opens
+PASS growth: timeline +1 — (19, 20)
+PASS growth: card updated — ('7.9kg', '67.5cm · 9/28', '→', '8kg', '68cm · 今天')
+PASS 换一句 opens samples popup
+PASS reload: still onboarded
+PASS reload: records persisted — (20, 20)
+PASS reload: card selection persisted — ['card-feed-v', 'card-sleep-v', 'card-diaper-v', 'card-pee-v', 'card-symptom-v', 'card-growth-v']
+PASS reload: edited sample persisted
+PASS family shows 妈妈 (本机)
+PASS profile edit saved
+PASS invite shows 云端同步开通后可用
+PASS login page marked 未接入
+PASS home header uses new name
+PASS reset demo restores 12 demo events — 12
+PASS clear all asks twice
+PASS clear all → back to onboarding
+PASS after clear + reload still onboarding
+
+console/page errors: []
+PASS no console errors
+
+60 passed, 0 failed []

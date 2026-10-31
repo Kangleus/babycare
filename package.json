@@ -6,6 +6,7 @@
     "@expo-google-fonts/nunito": "^0.4.2",
     "@expo-google-fonts/zcool-kuaile": "^0.4.2",
     "@expo/ui": "~58.0.26",
+    "@react-native-async-storage/async-storage": "2.2.0",
     "expo": "~58.0.22",
     "expo-constants": "~58.0.14",
     "expo-device": "~58.0.5",
@@ -42,7 +43,10 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "build:web": "expo export --platform web",
+    "serve:web": "python3 -m http.server 8090 -d dist",
+    "e2e": "/workspace/.venv-proto/bin/python tools/e2e.py"
   },
   "private": true
 }

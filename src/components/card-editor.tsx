@@ -6,7 +6,7 @@ import { useApp } from '@/state/app-state';
 import { CARDS, DEF_CARDS } from '@/data/mock';
 import { hard, Kind, kindColor } from '@/theme/tokens';
 import { Txt } from './txt';
-import { useLvAcc } from './home';
+import { useLvAcc } from '@/state/hooks';
 
 export function CardEditor({ open, onClose }: { open: boolean; onClose: () => void }) {
   return (
@@ -47,7 +47,7 @@ function EditorBody({ onClose }: { onClose: () => void }) {
             {slots.map((k, i) => {
               const col = kindColor(p, k), on = i === sel;
               return (
-                <Pressable key={k} onPress={() => setSel(i)} style={[s.slot, { width: slotW, backgroundColor: col.ks, borderColor: p.ink }, hard(p, 3), on && s.slotSel]}>
+                <Pressable key={k} testID={`slot-${i}`} onPress={() => setSel(i)} style={[s.slot, { width: slotW, backgroundColor: col.ks, borderColor: p.ink }, hard(p, 3), on && s.slotSel]}>
                   <View style={[s.slotNo, { backgroundColor: p.card, borderColor: p.ink }]}><Txt f="b9" size={11}>{i + 1}</Txt></View>
                   <View style={[s.slotIc, { backgroundColor: col.k, borderColor: p.ink }]}><Icon name={CARDS[k].ic} size={18} /></View>
                   <Txt f="b9" size={13}>{CARDS[k].n}</Txt>
@@ -69,7 +69,7 @@ function EditorBody({ onClose }: { onClose: () => void }) {
             {(Object.keys(CARDS) as Kind[]).map(k => {
               const u = slots.includes(k), col = kindColor(p, k);
               return (
-                <Pressable key={k} onPress={() => pick(k)} style={[s.pc, { width: pcW, borderColor: p.ink, backgroundColor: u ? p.bg2 : p.card }, u ? { borderStyle: 'dashed' } : hard(p, 2)]}>
+                <Pressable key={k} testID={`pool-${k}`} onPress={() => pick(k)} style={[s.pc, { width: pcW, borderColor: p.ink, backgroundColor: u ? p.bg2 : p.card }, u ? { borderStyle: 'dashed' } : hard(p, 2)]}>
                   <View style={[s.pcIc, { backgroundColor: col.k, borderColor: p.ink, opacity: u ? 0.55 : 1 }]}><Icon name={CARDS[k].ic} size={20} /></View>
                   <Txt f="b9" size={11.5} color={u ? p.sub : p.ink}>{CARDS[k].n}</Txt>
                   {u ? <View style={[s.chk, { backgroundColor: p.green, borderColor: p.ink }]}><Icon name="check" size={10} color={p.ink} /></View> : null}
@@ -79,7 +79,7 @@ function EditorBody({ onClose }: { onClose: () => void }) {
           </View>
           <View style={s.actions}>
             <Pressable onPress={() => { setSlots(DEF_CARDS); setSel(0); }} style={[s.btn, { backgroundColor: p.card, borderColor: p.ink }, hard(p, 4)]}><Txt f="b9" size={16}>恢复默认</Txt></Pressable>
-            <Pressable onPress={() => { setCards(slots); onClose(); showToast('首页卡片换好啦'); }} style={[s.btn, { flex: 1.6, backgroundColor: p.yellow, borderColor: p.ink }, hard(p, 4)]}><Icon name="check" size={20} color={p.ink} /><Txt f="b9" size={16}>好了</Txt></Pressable>
+            <Pressable testID="editor-ok" onPress={() => { setCards(slots); onClose(); showToast('首页卡片换好啦'); }} style={[s.btn, { flex: 1.6, backgroundColor: p.yellow, borderColor: p.ink }, hard(p, 4)]}><Icon name="check" size={20} color={p.ink} /><Txt f="b9" size={16}>好了</Txt></Pressable>
           </View>
           <Txt f="b8" size={11} color={p.sub} style={{ textAlign: 'center', marginTop: 10 }}>已在首页的类型再点一下，会和选中的那张换位置</Txt>
         </ScrollView>

@@ -8,8 +8,11 @@ import { useFonts, Nunito_400Regular, Nunito_600SemiBold, Nunito_700Bold, Nunito
 import { ZCOOLKuaiLe_400Regular } from '@expo-google-fonts/zcool-kuaile';
 import { AppStateProvider, useApp } from '@/state/app-state';
 import { TabBar } from '@/components/tabbar';
-import { StatusBarMock, Toast, TopFade } from '@/components/chrome';
-import { SamplePill } from '@/components/sample';
+import { Cele, StatusBarMock, Toast, TopFade } from '@/components/chrome';
+import { SamplesPop } from '@/components/sample';
+import { RecordSheet } from '@/components/record-sheet';
+import { TrendSheet } from '@/components/trend';
+import { Onboarding } from '@/components/onboarding';
 import { usePathname } from 'expo-router';
 import { injectMascotCss } from '@/lib/mascot-css';
 
@@ -18,8 +21,20 @@ injectMascotCss();
 SplashScreen.preventAutoHideAsync();
 
 function Shell() {
-  const { p, night } = useApp();
+  const { p, night, ready, settings } = useApp();
   const path = usePathname();
+  useEffect(() => { if (ready) SplashScreen.hideAsync(); }, [ready]);
+  if (!ready) return <View style={{ flex: 1, backgroundColor: p.bg }} />;
+  if (!settings.onboarded) {
+    return (
+      <View style={{ flex: 1, backgroundColor: p.bg }}>
+        <StatusBar style={night ? 'light' : 'dark'} />
+        <Onboarding />
+        <StatusBarMock />
+        <Toast />
+      </View>
+    );
+  }
   return (
     <View style={{ flex: 1, backgroundColor: p.bg }}>
       <StatusBar style={night ? 'light' : 'dark'} />
@@ -34,8 +49,11 @@ function Shell() {
         </TabList>
         <TopFade />
         <StatusBarMock />
-        {path === '/' ? <SamplePill /> : null}
+        {path === '/' ? <SamplesPop /> : null}
         <TabBar />
+        <RecordSheet />
+        <TrendSheet />
+        <Cele />
         <Toast />
       </Tabs>
     </View>
@@ -44,7 +62,6 @@ function Shell() {
 
 export default function RootLayout() {
   const [loaded] = useFonts({ Nunito_400Regular, Nunito_600SemiBold, Nunito_700Bold, Nunito_800ExtraBold, Nunito_900Black, ZCOOLKuaiLe_400Regular });
-  useEffect(() => { if (loaded) SplashScreen.hideAsync(); }, [loaded]);
   if (!loaded) return null;
   return (
     <SafeAreaProvider>
