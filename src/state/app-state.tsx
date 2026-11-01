@@ -1,7 +1,8 @@
 /* 全局状态：启动时从 Repo 读出宝宝 / 记录 / 设置；所有写操作先写 Repo 再更新内存 */
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { REMINDERS, Reminder } from '@/data/mock';
-import { getRepo, DEFAULT_SETTINGS, LOCAL_MEMBER } from '@/data/repo';
+import { getRepo, getLocalStore, DEFAULT_SETTINGS, LOCAL_MEMBER } from '@/data/repo';
+import { cloud } from '@/data/sync';
 import { buildDemo } from '@/data/seed';
 import type { Baby, BabyRecord, Member, NewRecord, Settings } from '@/data/types';
 import { dayEvs, Ev } from '@/lib/calc';
@@ -58,6 +59,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   }, [repo]);
   /* 启动时从仓库读一次（异步回调里 setState，订阅外部存储） */
   useEffect(() => { let alive = true; Promise.resolve().then(() => { if (alive) load(); }); return () => { alive = false; }; }, [load]);
+  /* 云端同步：启动同步引擎；家人的新记录 / 成员变化到了就重新读本地副本 */
+  useEffect(() => { cloud.start(getLocalStore()); return cloud.on(e => { if (e === 'data') load(); }); }, [load]);
   /* 每 30 秒刷新「现在」，让预测 / 进行中的睡眠走起来 */
   useEffect(() => { const t = setInterval(() => setNow(new Date()), 30000); return () => clearInterval(t); }, []);
 
@@ -101,6 +104,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     if (!baby) return; await seed(baby); await save({ cards: DEFAULT_SETTINGS.cards, lvl: 3, xp: 37, demoSeeded: true });
   }, [baby, seed, save]);
   const clearAll = useCallback(async () => {
+    if (cloud.state.userId) await cloud.signOut();
     await repo.clearAll(); setBaby(null); setRecords([]); setSettings(DEFAULT_SETTINGS); setMembers([LOCAL_MEMBER]);
   }, [repo]);
 

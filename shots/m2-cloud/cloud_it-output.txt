@@ -1,0 +1,31 @@
+PASS sign in yj-it-a@example.com
+PASS sign in yj-it-b@example.com
+PASS sign in yj-it-c@example.com
+PASS A create_family
+PASS A insert baby
+PASS A insert record
+PASS created_by forced to A + family display name — 妈妈
+PASS RLS: C cannot read family records — []
+PASS RLS: C cannot read baby
+PASS RLS: C cannot read family
+PASS RLS: C cannot insert into family — baby not found or not accessible
+PASS RLS: C cannot update family record
+PASS C cannot create invite for family — not a family member
+PASS anon cannot read records — permission denied for table records
+PASS A create_invite → 6-char code + expiry — 5T5FYH 2026-11-03T03:39:42.027384+00:00
+PASS wrong code rejected
+PASS B accept_invite (case-insensitive)
+PASS used code cannot be reused by C
+PASS B sees A's record
+PASS members visible to B: 妈妈(admin) + 爸爸(member) — [{"display_name":"妈妈","role":"admin"},{"display_name":"爸爸","role":"member"}]
+PASS B cannot promote self to admin — permission denied for table family_members
+PASS B insert record
+PASS A receives B's record via realtime — 403 ms, by 爸爸
+PASS A receives soft-delete via realtime
+PASS RLS: C receives nothing via realtime — 0 events
+PASS B can leave family
+PASS after leaving, B cannot read
+PASS A delete_account (sole member → family, baby, records deleted)
+PASS A's old token sees nothing afterwards
+
+29 passed, 0 failed

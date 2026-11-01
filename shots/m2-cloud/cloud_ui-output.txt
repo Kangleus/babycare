@@ -1,0 +1,19 @@
+PASS A: after login → no family yet
+PASS A: member list shows 妈妈（我）
+PASS A: invite code is 6 chars + expiry shown — XKC672
+PASS A: share text contains code
+PASS B: members show 妈妈 + 爸爸（我）
+PASS B: baby switched to family baby 豆米
+PASS B: sees A's record (妈妈记)
+PASS B: demo records were not uploaded (no 奶奶记)
+PASS A: members now 妈妈（我）+ 爸爸
+PASS A: B's new record appears via realtime — 0.6s
+PASS C: no family (cannot see A's family)
+PASS C: used invite code rejected
+PASS C: home has no 妈妈记/爸爸记 from A's family
+PASS A: after delete account → back to onboarding
+PASS B: family still exists, A gone (B only)
+console/page errors: []
+PASS no console errors
+
+16 passed, 0 failed []
