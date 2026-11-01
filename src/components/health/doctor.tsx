@@ -51,7 +51,7 @@ function DoctorBody({ ep, onClose }: { ep: Episode | null; onClose: () => void }
   const { rows } = buildMemo(ep, records, now, allergies, vaxRecent);
   const title = ep ? `${baby.name} · ${ep.title}` : `${baby.name} · 近 3 天体温用药`;
   const sub = `${ep ? `${epRange(ep)} · 第 ${episodeDays(ep, now)} 天 · ${ep.status === 'active' ? '进行中' : '已康复'}` : `${md(new Date(+now - 2 * DAY))}–${md(now)}`} · ${baby.gender === 'girl' ? '女' : baby.gender === 'boy' ? '男' : ''} · ${ageText(baby.birthday, now, false)} · 给医生看`;
-  const FOOT = '由「团子育儿本」根据家长记录整理 · 不含诊断 · 仅供参考';
+  const FOOT = '「团子育儿本」据家长记录整理 · 不含诊断 · 仅供参考';
   const text = [title, sub, '', ...rows.map(r => `【${r.k}】\n${r.d.join('\n')}`), '', FOOT].join('\n');
   const doImg = async () => {
     setBusy(true);
