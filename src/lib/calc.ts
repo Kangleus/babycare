@@ -166,3 +166,28 @@ export function kindRows(k: Kind, events: Ev[]) {
   if (k === 'pee') ev = ev.filter(e => e.sub !== 'poop'); if (k === 'poop') ev = ev.filter(e => e.sub !== 'pee');
   return ev.sort((a, b) => tm(b.start) - tm(a.start));
 }
+
+/** 体温 / 体重是「测量值」：没测的那天不算 0，只平均有记录的天 */
+export const MEASURE: Partial<Record<Kind, true>> = { temp: true, growth: true };
+/**
+ * 趋势日均：范围内「完整的天」（不含今天）里，没有记录的天按 0 计；
+ * 但早于 start（宝宝第一条记录 / 开始使用这天，取更早者）的天不计入。
+ * days[i] 是每根柱子的日期，vals[i] 是那天的数值。没有可计入的天返回 null。
+ */
+export function rangeAvg(k: Kind, vals: (number | null)[], days: Date[], start: Date | null, today: Date): number | null {
+  if (!start) return null;
+  const xs: number[] = [];
+  vals.forEach((v, i) => {
+    const d = days[i];
+    if (d.getTime() >= today.getTime() || d.getTime() < start.getTime()) return;
+    if (MEASURE[k]) { if (v !== null) xs.push(v); } else xs.push(v ?? 0);
+  });
+  return xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null;
+}
+/** 统计起点：（这一类的）最早一条记录 与 开始使用（同意协议）这天，取更早者 */
+export function statsStart(records: BabyRecord[], appStart: string | null): Date | null {
+  let t = Infinity;
+  for (const r of records) t = Math.min(t, +new Date(r.time));
+  if (appStart) t = Math.min(t, +new Date(appStart));
+  return Number.isFinite(t) ? startOfDay(new Date(t)) : null;
+}

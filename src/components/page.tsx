@@ -9,9 +9,9 @@ import { Txt } from './txt';
 
 /* .page：padding 76px 18px 160px，可滚动 */
 export function Page({ children }: { children: ReactNode }) {
-  const { p } = useApp(); const top = useTopPad();
+  const top = useTopPad();
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: p.bg }} contentContainerStyle={{ paddingTop: top, paddingHorizontal: 18, paddingBottom: 160 }} showsVerticalScrollIndicator={false}>
+    <ScrollView style={{ flex: 1, backgroundColor: 'transparent' }} contentContainerStyle={{ paddingTop: top, paddingHorizontal: 18, paddingBottom: 160 }} showsVerticalScrollIndicator={false}>
       {children}
     </ScrollView>
   );

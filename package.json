@@ -46,7 +46,10 @@
     "lint": "expo lint",
     "build:web": "expo export --platform web",
     "serve:web": "python3 -m http.server 8090 -d dist",
-    "e2e": "/workspace/.venv-proto/bin/python tools/e2e.py"
+    "e2e": "/workspace/.venv-proto/bin/python tools/e2e.py",
+    "check:mascot": "/workspace/.venv-proto/bin/python tools/mascot_check.py",
+    "check:night": "/workspace/.venv-proto/bin/python tools/night_check.py",
+    "export:native": "expo export --platform ios --platform android --output-dir /tmp/native-export"
   },
   "private": true
 }

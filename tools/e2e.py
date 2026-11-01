@@ -13,6 +13,44 @@ def side(a,b,o):
   c=Image.new('RGB',(A.width*2+20,max(A.height,B.height)),'white');c.paste(A,(0,0));c.paste(B,(A.width+20,0));c.save(O+o)
   d=ImageChops.difference(A,B.resize(A.size)).convert('L');px=sum(1 for v in d.getdata() if v>40)
   print(o,'differing px (>40):',f'{px/(A.width*A.height)*100:.2f}%')
+
+async def expected_avg(r,k,rng):
+  """独立重算：范围内完整的天（不含今天），起点 = 这一类最早记录 / 同意协议 取早者；无记录的天按 0（体温只算有记录的天）"""
+  import json
+  recs=json.loads(await r.evaluate("localStorage.getItem('yj:v1:records')"))
+  st=json.loads(await r.evaluate("localStorage.getItem('yj:v1:settings')"))
+  loc=lambda iso: datetime.datetime.fromisoformat(iso.replace('Z','+00:00')).astimezone()
+  today=datetime.datetime(2026,10,31).date()
+  first=min([loc(x['time']).date() for x in recs if x['type']==k]+([loc(st['consentAt']).date()] if st.get('consentAt') else []))
+  def val(d):
+    rs=[x for x in recs if loc(x['time']).date()==d]
+    if k=='feed': return sum((x['values'].get('ml') or 0) for x in rs if x['type']=='feed')
+    if k=='bath': return sum(1 for x in rs if x['type']=='bath')
+    if k=='temp':
+      t=sorted([x for x in rs if x['type']=='temp'],key=lambda x:x['time']); return t[-1]['values']['v'] if t else None
+  # 本期 = 今天往前 1..rng-1 天（柱子含今天，但今天不计）；上期 = rng..2rng-1 天前
+  cur=[]; 
+  for i in range(1,rng):
+    d=today-datetime.timedelta(days=i)
+    if d<first: continue
+    v=val(d)
+    if k=='temp':
+      if v is not None: cur.append(v)
+    else: cur.append(v)
+  prev=[]
+  for i in range(rng,2*rng):
+    d=today-datetime.timedelta(days=i)
+    if d<first: continue
+    v=val(d)
+    if k=='temp':
+      if v is not None: prev.append(v)
+    else: prev.append(v)
+  A=lambda xs: sum(xs)/len(xs) if xs else None
+  return A(cur),A(prev),len(cur)
+def fmt_avg(k,v):
+  if k=='temp': return '%.1f'%v
+  if v<10 and abs(v-round(v))>1e-9: return '%.1f'%v
+  return str(round(v))
 async def main():
   async with async_playwright() as pw:
     b=await pw.chromium.launch(executable_path='/usr/bin/google-chrome',args=['--no-sandbox'])
@@ -60,6 +98,21 @@ async def main():
     await r.wait_for_timeout(1000)
     hint,pill,tlc=await r.evaluate("['hint','sample-pill','tl-count'].map(i=>{const b=document.querySelector(`[data-testid=${i}]`).getBoundingClientRect();return {y:b.y,height:b.height}})")
     check('sample pill below hint & above 今日时间线 (no overlap)', pill['y']>=hint['y']+hint['height'] and pill['y']+pill['height']<=tlc['y'], (hint,pill,tlc))
+
+
+    async def check_trend(k,rngs=(7,30)):
+      await T(f'card-{k}').click(); await r.wait_for_timeout(900)
+      for rng in rngs:
+        await T(f'range-{rng}').click(); await r.wait_for_timeout(300)
+        cur,prev,n=await expected_avg(r,k,rng)
+        shown=await txt('trend-avg'); cmp=await txt('trend-cmp')
+        check(f'trend {k} {rng}d avg = {fmt_avg(k,cur)} over {n} days (zeros counted, pre-start days skipped)', shown==fmt_avg(k,cur), (shown,cur,cmp))
+        if prev is None: check(f'trend {k} {rng}d: previous period empty', '还没有记录' in cmp, cmp)
+        else: check(f'trend {k} {rng}d prev avg {fmt_avg(k,prev)} in comparison', ('日均 '+fmt_avg(k,prev)) in cmp, cmp)
+      await shot(f'm1/trend-{k}-avg.png')
+      await T('trend-close').click(); await r.wait_for_timeout(600)
+    # ---------- 1b. trend averages on fresh demo data ----------
+    await check_trend('feed'); await check_trend('temp')
 
     # ---------- 2. add one record of each default type ----------
     lvl0=await txt('lvl')
@@ -133,10 +186,11 @@ async def main():
 
     # ---------- 5. change cards (+ optional sheets) ----------
     await T('edit-cards').click(); await r.wait_for_timeout(900)
-    await T('slot-3').click(); await T('pool-pee').click(); await T('slot-4').click(); await T('pool-symptom').click(); await T('slot-5').click(); await T('pool-growth').click()
+    await T('slot-3').click(); await T('pool-pee').click(); await T('slot-4').click(); await T('pool-symptom').click(); await T('slot-5').click(); await T('pool-growth').click(); await T('slot-2').click(); await T('pool-bath').click()
     await shot('m1/card-editor.png')
     await T('editor-ok').click(); await r.wait_for_timeout(900)
-    for k in ['pee','symptom','growth']: check(f'card {k} on home', await T(f'card-{k}').count()==1)
+    for k in ['pee','symptom','growth','bath']: check(f'card {k} on home', await T(f'card-{k}').count()==1)
+    await check_trend('bath')
     await shot('m1/04-home-new-cards.png')
     async def sym(): await T('sym-咳嗽').click()
     await add('pee',None); await add('symptom',sym)

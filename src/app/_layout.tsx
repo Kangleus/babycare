@@ -8,7 +8,7 @@ import { useFonts, Nunito_400Regular, Nunito_600SemiBold, Nunito_700Bold, Nunito
 import { ZCOOLKuaiLe_400Regular } from '@expo-google-fonts/zcool-kuaile';
 import { AppStateProvider, useApp } from '@/state/app-state';
 import { TabBar } from '@/components/tabbar';
-import { Cele, StatusBarMock, Toast, TopFade } from '@/components/chrome';
+import { Cele, NightStars, NightTint, StatusBarMock, Toast, TopFade } from '@/components/chrome';
 import { SamplesPop } from '@/components/sample';
 import { RecordSheet } from '@/components/record-sheet';
 import { TrendSheet } from '@/components/trend';
@@ -38,6 +38,7 @@ function Shell() {
   return (
     <View style={{ flex: 1, backgroundColor: p.bg }}>
       <StatusBar style={night ? 'light' : 'dark'} />
+      <NightStars />
       <Tabs style={{ flex: 1 }}>
         <TabSlot style={{ flex: 1 }} />
         {/* 隐藏的 TabList 只用于注册路由，真正的 Tab 栏是下面的自定义 TabBar */}
@@ -54,6 +55,7 @@ function Shell() {
         <RecordSheet />
         <TrendSheet />
         <Cele />
+        <NightTint />
         <Toast />
       </Tabs>
     </View>

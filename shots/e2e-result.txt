@@ -6,9 +6,17 @@ PASS onboarding: profile page
 PASS profile: invalid birthday blocks submit
 PASS home after onboarding
 PASS age line computed from birthday
-m1/compare-home.png differing px (>40): 2.74%
-m1/compare-home-scrolled.png differing px (>40): 10.67%
+m1/compare-home.png differing px (>40): 2.78%
+m1/compare-home-scrolled.png differing px (>40): 10.75%
 PASS sample pill below hint & above 今日时间线 (no overlap) — ({'y': 688.875, 'height': 16}, {'y': 716.875, 'height': 36}, {'y': 769.875, 'height': 15})
+PASS trend feed 7d avg = 775 over 6 days (zeros counted, pre-start days skipped) — ('775', 775.0, '上周日均 780 ml · 和上周基本持平')
+PASS trend feed 7d prev avg 780 in comparison — 上周日均 780 ml · 和上周基本持平
+PASS trend feed 30d avg = 778 over 13 days (zeros counted, pre-start days skipped) — ('778', 777.6923076923077, '上个 30 天还没有记录')
+PASS trend feed 30d: previous period empty — 上个 30 天还没有记录
+PASS trend temp 7d avg = 36.8 over 2 days (zeros counted, pre-start days skipped) — ('36.8', 36.75, '上周日均 36.8 ℃ · 和上周基本持平')
+PASS trend temp 7d prev avg 36.8 in comparison — 上周日均 36.8 ℃ · 和上周基本持平
+PASS trend temp 30d avg = 36.8 over 5 days (zeros counted, pre-start days skipped) — ('36.8', 36.78, '上个 30 天还没有记录')
+PASS trend temp 30d: previous period empty — 上个 30 天还没有记录
 PASS feed: quick-record sheet opens
 PASS feed: timeline +1 — (12, 13)
 PASS feed: card updated — ('510ml', '喂奶 3 次', '→', '700ml', '喂奶 4 次')
@@ -39,6 +47,11 @@ PASS tap card → trend sheet
 PASS card pee on home
 PASS card symptom on home
 PASS card growth on home
+PASS card bath on home
+PASS trend bath 7d avg = 0.5 over 6 days (zeros counted, pre-start days skipped) — ('0.5', 0.5, '上周日均 0.6 次 · 和上周基本持平')
+PASS trend bath 7d prev avg 0.6 in comparison — 上周日均 0.6 次 · 和上周基本持平
+PASS trend bath 30d avg = 0.5 over 13 days (zeros counted, pre-start days skipped) — ('0.5', 0.5384615384615384, '上个 30 天还没有记录')
+PASS trend bath 30d: previous period empty — 上个 30 天还没有记录
 PASS pee: quick-record sheet opens
 PASS pee: timeline +1 — (17, 18)
 PASS pee: card updated — ('4次', '尿尿', '→', '5次', '尿尿')
@@ -51,7 +64,7 @@ PASS growth: card updated — ('7.9kg', '67.5cm · 9/28', '→', '8kg', '68cm ·
 PASS 换一句 opens samples popup
 PASS reload: still onboarded
 PASS reload: records persisted — (20, 20)
-PASS reload: card selection persisted — ['card-feed-v', 'card-sleep-v', 'card-diaper-v', 'card-pee-v', 'card-symptom-v', 'card-growth-v']
+PASS reload: card selection persisted — ['card-feed-v', 'card-sleep-v', 'card-bath-v', 'card-pee-v', 'card-symptom-v', 'card-growth-v']
 PASS reload: edited sample persisted
 PASS family shows 妈妈 (本机)
 PASS profile edit saved
@@ -66,4 +79,4 @@ PASS after clear + reload still onboarding
 console/page errors: []
 PASS no console errors
 
-60 passed, 0 failed []
+73 passed, 0 failed []

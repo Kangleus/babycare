@@ -1,5 +1,7 @@
 /* 手机外框元素：状态栏（仅 Web 演示）、顶部渐隐、Toast */
-import { Platform, StyleSheet, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Animated, Easing, Platform, StyleSheet, View } from 'react-native';
+import { useReduceMotion } from '@/lib/mascot';
 import Svg, { Circle, Defs, LinearGradient, RadialGradient, Rect, Stop, SvgXml } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '@/state/app-state';
@@ -93,3 +95,45 @@ const s = StyleSheet.create({
   toastWrap: { position: 'absolute', top: 92, left: 0, right: 0, alignItems: 'center', zIndex: 160 },
   toast: { paddingVertical: 9, paddingHorizontal: 16, borderRadius: 99 },
 });
+
+/* 夜间星星 —— 原型 .night-stars（473-476）+ app4 初始化：22 颗 4px 金色圆点，
+   left:(i*37)%100%  top:(i*53)%45+3%  scale(.6+(i%3)*.3)  tw 3s ease-in-out alternate .2↔.9，delay (i%5)*.6s；
+   容器 opacity 0→1 transition .6s。固定在屏幕上、在页面内容之下。 */
+const STARS = Array.from({ length: 22 }, (_, i) => ({ left: `${(i * 37) % 100}%` as const, top: `${((i * 53) % 45) + 3}%` as const, g: i % 5, s: 0.6 + (i % 3) * 0.3 }));
+const EASE_IO = Easing.bezier(0.42, 0, 0.58, 1);
+export function NightStars() {
+  const { night } = useApp();
+  const still = useReduceMotion();
+  const [fade] = useState(() => new Animated.Value(night ? 1 : 0));
+  const [tw] = useState(() => Array.from({ length: 5 }, () => new Animated.Value(0.2)));
+  const [shown, setShown] = useState(night);
+  if (night && !shown) setShown(true);
+  useEffect(() => {
+    Animated.timing(fade, { toValue: night ? 1 : 0, duration: 600, easing: Easing.bezier(0.25, 0.1, 0.25, 1), useNativeDriver: true }).start(({ finished }) => { if (finished && !night) setShown(false); });
+  }, [night, fade]);
+  useEffect(() => {
+    if (!shown) return;
+    if (still) { tw.forEach(v => v.setValue(0.55)); return; }
+    /* tw 3s ease-in-out infinite alternate：.2 → .9 往返，各组延迟 (i%5)*.6s */
+    const loops = tw.map((v, g) => {
+      v.setValue(0.2);
+      const t = (to: number) => Animated.timing(v, { toValue: to, duration: 3000, easing: EASE_IO, useNativeDriver: true, isInteraction: false });
+      const a = Animated.sequence([Animated.delay(g * 600), Animated.loop(Animated.sequence([t(0.9), t(0.2)]))]);
+      a.start(); return a;
+    });
+    return () => loops.forEach(a => a.stop());
+  }, [shown, still, tw]);
+  if (!shown) return null;
+  return (
+    <Animated.View pointerEvents="none" testID="night-stars" style={[StyleSheet.absoluteFill, { opacity: fade, zIndex: 0 }]}>
+      {STARS.map((st, i) => (
+        <Animated.View key={i} style={{ position: 'absolute', left: st.left, top: st.top, width: 4, height: 4, borderRadius: 2, backgroundColor: '#E9B949', opacity: tw[st.g], transform: [{ scale: st.s }] }} />
+      ))}
+    </Animated.View>
+  );
+}
+/* 原型 477：body.night .screen:after{background:rgba(20,10,0,.08);z-index:199} */
+export function NightTint() {
+  const { night } = useApp();
+  return night ? <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(20,10,0,.08)', zIndex: 199 }]} /> : null;
+}

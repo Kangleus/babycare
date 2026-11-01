@@ -6,7 +6,7 @@ import Svg, { Defs, Pattern, Rect } from 'react-native-svg';
 import { useApp } from '@/state/app-state';
 import { Icon, Tuan } from '@/lib/svg';
 import { CARDS, TYPE_IC } from '@/data/mock';
-import { dayEvs, dayValue, evMeta, evTitle, kindRows, METRIC } from '@/lib/calc';
+import { dayEvs, dayValue, evMeta, evTitle, kindRows, METRIC, rangeAvg, statsStart } from '@/lib/calc';
 import { addDays, md, minOf, startOfDay, WK } from '@/lib/time';
 import { hard, Kind, kindColor } from '@/theme/tokens';
 import { useLvAcc } from '@/state/hooks';
@@ -20,28 +20,35 @@ export function TrendSheet() {
 }
 
 function Body({ k }: { k: Kind }) {
-  const { p, records, now, baby, events, night, openTrend, openRecord } = useApp();
+  const { p, records, now, baby, events, night, settings, openTrend, openRecord } = useApp();
   const lv = useLvAcc();
   const [r, setR] = useState<7 | 30>(7);
   const M = METRIC[k], c = CARDS[k], col = kindColor(p, k);
   const acc = (() => { const a = c.acc.filter(x => x !== 'cap'); return night ? [...a, 'cap'] : (a.length ? a : lv); })();
   const today = startOfDay(now);
+  /* 统计起点：这类记录的第一条 与 开始使用这天 取更早者；更早的天不画柱、不计入日均 */
+  const start = useMemo(() => { const t = k === 'pee' || k === 'poop' ? 'diaper' : k; return statsStart(records.filter(x => x.type === t), settings.consentAt); }, [records, settings.consentAt, k]);
   const series = useMemo(() => {
-    const val = (i: number) => { const d = addDays(today, -i); return dayValue(k, dayEvs(records, d), i === 0 ? minOf(now) : 1440); };
+    const day = (i: number) => addDays(today, -i);
+    const val = (i: number) => (start && day(i) < start ? null : dayValue(k, dayEvs(records, day(i)), i === 0 ? minOf(now) : 1440));
     const vals = Array.from({ length: r }, (_, j) => val(r - 1 - j));
-    const prev = Array.from({ length: r }, (_, j) => val(2 * r - 1 - j)).slice(0, r);
-    return { vals, prev };
-  }, [k, r, records, now, today]);
-  const { vals, prev } = series;
+    const prev = Array.from({ length: r }, (_, j) => val(2 * r - 1 - j));
+    const days = Array.from({ length: r }, (_, j) => day(r - 1 - j));
+    const pdays = Array.from({ length: r }, (_, j) => day(2 * r - 1 - j));
+    return { vals, prev, days, pdays };
+  }, [k, r, records, now, today, start]);
+  const { vals, prev, days, pdays } = series;
   const base = k === 'temp' ? 35 : 0;
+  /* 范围内没记录的天按 0 计（体温 / 体重除外），起点之前的天不计 */
+  const avgN = rangeAvg(k, vals, days, start, today), pavg = rangeAvg(k, prev, pdays, start, today);
+  const avg = avgN ?? 0;
   const full = vals.slice(0, -1).filter((v): v is number => v !== null && v > 0);
-  const pfull = prev.filter((v): v is number => v !== null && v > 0);
-  const avg = full.length ? full.reduce((a, b) => a + b, 0) / full.length : 0;
-  const pavg = pfull.length ? pfull.reduce((a, b) => a + b, 0) / pfull.length : null;
   const max = (Math.max(...vals.map(v => (v ?? base) - base), 1)) * 1.12;
   const maxI = full.length ? vals.slice(0, -1).indexOf(Math.max(...full)) : -1;
   const show = (v: number | null) => v === null ? '—' : M.dec ? v.toFixed(M.dec) : String(Math.round(v));
-  const avgTxt = M.dec ? avg.toFixed(M.dec) : String(Math.round(avg));
+  /* 次数类日均可能是小数（隔天洗澡 = 0.5 次），保留 1 位 */
+  const fmtAvg = (v: number) => (M.dec ? v.toFixed(M.dec) : v < 10 && !Number.isInteger(v) ? v.toFixed(1) : String(Math.round(v)));
+  const avgTxt = avgN === null ? '—' : fmtAvg(avg);
   const label = (i: number) => {
     if (i === vals.length - 1) return '今天';
     const d = addDays(today, -(vals.length - 1 - i));
@@ -49,12 +56,13 @@ function Body({ k }: { k: Kind }) {
   };
   const period = r === 7 ? '上周' : '上个 30 天';
   const cmp = (() => {
+    if (avgN === null) return '还没有满一天的记录';
     if (pavg === null) return `${period}还没有记录`;
-    const lastTxt = `${period}日均 ${M.dec ? pavg.toFixed(M.dec) : Math.round(pavg)} ${M.u}`;
+    const lastTxt = `${period}日均 ${fmtAvg(pavg)} ${M.u}`;
     const d = avg - pavg;
-    if (Math.abs(d) < Math.max(0.05 * pavg, M.dec ? 0.1 : 1)) return `${lastTxt} · 和${period}基本持平`;
+    if (Math.abs(d) < Math.max(0.05 * pavg, M.dec ? 0.1 : pavg < 10 ? 0.1 : 1)) return `${lastTxt} · 和${period}基本持平`;
     if (k === 'sleep') return `${lastTxt} · 比${period}${d < 0 ? '少' : '多'}约 ${Math.round(Math.abs(d) * 60 / 10) * 10} 分钟`;
-    return `${lastTxt} · 比${period}${d < 0 ? '少' : '多'} ${M.dec ? Math.abs(d).toFixed(M.dec) : Math.round(Math.abs(d))} ${M.u}`;
+    return `${lastTxt} · 比${period}${d < 0 ? '少' : '多'} ${fmtAvg(Math.abs(d))} ${M.u}`;
   })();
   const rows = kindRows(k, events);
   const thin = r === 30;
@@ -75,10 +83,10 @@ function Body({ k }: { k: Kind }) {
           ))}
         </View>
         <Txt f="b9" size={12} color={p.sub}>日均{M.n}</Txt>
-        <View style={s.avg}><Text style={[fam('b9'), { fontSize: 38, lineHeight: 38, color: p.ink, letterSpacing: -0.38 }]}>{avgTxt}</Text><Txt f="b9" size={14} style={{ marginBottom: 4 }}>{M.u}</Txt></View>
-        <Txt f="b8" size={12} color={p.sub} style={{ marginTop: 4 }}>{cmp}</Txt>
+        <View style={s.avg}><Text testID="trend-avg" style={[fam('b9'), { fontSize: 38, lineHeight: 38, color: p.ink, letterSpacing: -0.38 }]}>{avgTxt}</Text><Txt f="b9" size={14} style={{ marginBottom: 4 }}>{M.u}</Txt></View>
+        <Txt testID="trend-cmp" f="b8" size={12} color={p.sub} style={{ marginTop: 4 }}>{cmp}</Txt>
         <View style={[s.bars, { height: H + 56, gap: thin ? 3 : 9 }]}>
-          <View pointerEvents="none" style={[s.avgline, { bottom: (avg - base) / max * H + 28, borderColor: p.ink }]}><Txt f="b9" size={10} style={s.avgT}>均值</Txt></View>
+          {avgN !== null ? <View pointerEvents="none" style={[s.avgline, { bottom: (avg - base) / max * H + 28, borderColor: p.ink }]}><Txt f="b9" size={10} style={s.avgT}>均值</Txt></View> : null}
           {vals.map((v, i) => {
             const h = v === null ? 0 : Math.max(6, (v - base) / max * H), isT = i === vals.length - 1;
             return (

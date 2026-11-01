@@ -1,7 +1,7 @@
 import { Platform } from 'react-native';
 
 /* 原型 index.html「mascot animation」段原样搬运（去掉 .tuan 前缀，SvgXml 不保留根 svg 的 class）。
-   仅 Web；原生端团子动画在后续里程碑用 Reanimated 实现。 */
+   仅 Web；原生端见 src/lib/mascot.tsx（RN Animated 原生驱动，关键帧与这里一致）。 */
 const CSS = `
 .t-body{transform-origin:60px 108px;animation:yj-breath 2.6s ease-in-out infinite alternate}
 @keyframes yj-breath{0%{transform:scale(1,1)}100%{transform:scale(1.025,.965)}}
@@ -16,6 +16,7 @@ const CSS = `
 @keyframes yj-zz{0%{opacity:0;transform:translate(0,6px)}30%{opacity:1}100%{opacity:0;transform:translate(8px,-14px)}}
 .t-sprout{transform-box:fill-box;transform-origin:50% 100%;animation:yj-sway 3s ease-in-out infinite alternate}
 @keyframes yj-sway{0%{transform:rotate(-6deg)}100%{transform:rotate(6deg)}}
+@media (prefers-reduced-motion: reduce){.t-body,.t-eye,.t-ring,.t-bubble,.t-z,.t-sprout{animation:none!important}}
 `;
 
 export function injectMascotCss() {
