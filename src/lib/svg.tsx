@@ -11,8 +11,8 @@ export const Icon = memo(function Icon({ name, size = 22, color, fill }: { name:
 
 const USE_NATIVE_MASCOT = Platform.OS !== 'web' || (typeof location !== 'undefined' && /[?&]mascot=native\b/.test(location.search));
 
-export const Tuan = memo(function Tuan({ mood = 'idle', acc = [], size = 64 }: { mood?: Mood; acc?: string[]; size?: number }) {
+export const Tuan = memo(function Tuan({ mood = 'idle', acc = [], size = 64, cls = '' }: { mood?: Mood; acc?: string[]; size?: number; cls?: string }) {
   /* 原生：Animated 分层动画；Web：原型 CSS 动画（?mascot=native 可在浏览器里预览原生实现） */
-  if (USE_NATIVE_MASCOT) return <AnimatedTuan xml={tuan(mood, acc)} size={size} />;
-  return <SvgXml xml={tuan(mood, acc)} width={size} height={size} />;
+  if (USE_NATIVE_MASCOT) return <AnimatedTuan xml={tuan(mood, acc, cls)} size={size} />;
+  return <SvgXml xml={tuan(mood, acc, cls)} width={size} height={size} />;
 });

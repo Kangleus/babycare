@@ -50,21 +50,23 @@ export function Split({ left, chip, chipIcon = 'sparkle' }: { left: string; chip
 }
 
 /* .rc（240-252, 502-504, 590-592） */
-export function Rc({ kind, icon, title, tags, onPress, edit = '点我改', testID }: { kind: Kind; icon: IconName; title: ReactNode; tags: { t: ReactNode; def?: boolean; num?: boolean; clock?: boolean }[]; onPress?: () => void; edit?: string | null; testID?: string }) {
+export function Rc({ kind, icon, title, tags, onPress, edit = '点我改', testID, diff, dashed }: { kind: Kind; icon: IconName; title: ReactNode; tags: { t: ReactNode; def?: boolean; num?: boolean; clock?: boolean }[]; onPress?: () => void; edit?: string | null; testID?: string; diff?: ReactNode; dashed?: boolean }) {
   const { p } = useApp(); const c = kindColor(p, kind);
   return (
-    <Pressable testID={testID} onPress={onPress} style={({ pressed }) => [s.rc, { backgroundColor: c.ks, borderColor: p.ink }, pressed && onPress ? { transform: [{ translateY: 2 }] } : hard(p, 4)]}>
+    <Pressable testID={testID} onPress={onPress} style={({ pressed }) => [s.rc, { backgroundColor: c.ks, borderColor: p.ink }, dashed && { backgroundColor: p.card, borderStyle: 'dashed' }, pressed && onPress ? { transform: [{ translateY: 2 }] } : hard(p, 4)]}>
       <View style={[s.rcIc, { backgroundColor: c.k, borderColor: p.ink }]}><Icon name={icon} size={28} /></View>
       <View style={{ flex: 1, minWidth: 0 }}>
         <Txt f="b9" size={16}>{title}</Txt>
-        <View style={s.tags}>
+        {/* .rc .diff（251-252）：一句话修改 <s>120ml</s>→ 150ml */}
+        {diff ? <View style={s.diff}>{diff}</View> : null}
+        {tags.length ? <View style={s.tags}>
           {tags.map((g, i) => (
             <View key={i} style={[s.tag, { backgroundColor: p.card, borderColor: p.line }, g.def && { borderStyle: 'dashed' }]}>
               {g.clock ? <Icon name="clock" size={11} /> : null}
               <Txt f={g.num ? 'b9' : 'b8'} size={11} color={g.def ? p.sub : p.ink}>{g.t}</Txt>
             </View>
           ))}
-        </View>
+        </View> : null}
       </View>
       {edit ? <View style={[s.edit, { backgroundColor: p.card, borderColor: p.ink }]}><Icon name="pen" size={13} /><Txt f="b9" size={11}>{edit}</Txt></View> : null}
     </Pressable>
@@ -211,6 +213,7 @@ const s = StyleSheet.create({
   rc: { flexDirection: 'row', gap: 12, alignItems: 'center', borderWidth: 2.5, borderRadius: 24, padding: 12, marginBottom: 10 },
   rcIc: { width: 48, height: 48, borderRadius: 17, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center' },
   tags: { flexDirection: 'row', gap: 5, marginTop: 5, flexWrap: 'wrap' },
+  diff: { flexDirection: 'row', alignItems: 'baseline', marginTop: 4 },
   tag: { flexDirection: 'row', alignItems: 'center', gap: 3, borderRadius: 99, paddingVertical: 2, paddingHorizontal: 8, borderWidth: 1.5 },
   edit: { flexDirection: 'row', alignItems: 'center', gap: 3, borderWidth: 2, borderRadius: 99, paddingVertical: 4, paddingHorizontal: 9 },
   editor: { borderWidth: 2.5, borderStyle: 'dashed', borderRadius: 22, padding: 12, marginTop: -2, marginBottom: 12 },

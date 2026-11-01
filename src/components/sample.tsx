@@ -4,6 +4,7 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useApp } from '@/state/app-state';
 import { Icon } from '@/lib/svg';
 import { SAMPLES } from '@/data/mock';
+import { voice } from '@/state/voice';
 import { hard } from '@/theme/tokens';
 import { Txt } from './txt';
 
@@ -20,20 +21,20 @@ export function SamplePill() {
 
 /* .samples-pop（152-156, 506-508）+ app5 分组 */
 export function SamplesPop() {
-  const { p, sample, setSample, samplesOpen, setSamplesOpen, showToast } = useApp();
+  const { p, sample, setSample, samplesOpen, setSamplesOpen } = useApp();
   if (!samplesOpen) return null;
   return (
     <>
       <Pressable style={s.catch} onPress={() => setSamplesOpen(false)} />
       <View testID="samples-pop" style={[s.pop, { backgroundColor: p.card, borderColor: p.ink }, hard(p, 5)]}>
         <ScrollView showsVerticalScrollIndicator={false}>
-          <Txt f="h" size={17} style={{ marginTop: 2, marginHorizontal: 6, marginBottom: 8 }}>选一句演示语音</Txt>
+          <Txt f="h" size={17} style={{ marginTop: 2, marginHorizontal: 6, marginBottom: 8 }}>试试这样说</Txt>
           {SAMPLES.map((x, i) => {
             const g = x.g || '日常', head = i === 0 || g !== (SAMPLES[i - 1].g || '日常');
             return (
               <View key={x.text}>
                 {head ? <Txt f="b9" size={11} color={p.sub} style={{ marginTop: 8, marginHorizontal: 10, marginBottom: 2 }}>{g}</Txt> : null}
-                <Pressable testID={`sample-${i}`} onPress={() => { setSample(i); setSamplesOpen(false); showToast('按住底部团子说话试试吧'); }} style={[s.it, i === sample && { backgroundColor: p.pinkS }]}>
+                <Pressable testID={`sample-${i}`} onPress={() => { setSample(i); setSamplesOpen(false); voice.h.openType('可以改一改，再交给团团', x.text); }} style={[s.it, i === sample && { backgroundColor: p.pinkS }]}>
                   <Icon name="mic" size={20} />
                   <View style={{ flex: 1 }}>
                     <Txt f="b8" size={13.5}>「{x.text}」</Txt>
@@ -43,6 +44,13 @@ export function SamplesPop() {
               </View>
             );
           })}
+          <Pressable testID="sample-type" onPress={() => { setSamplesOpen(false); voice.h.openType(); }} style={s.it}>
+            <Icon name="pen" size={20} />
+            <View style={{ flex: 1 }}>
+              <Txt f="b8" size={13.5}>不方便说话？打一句话</Txt>
+              <Txt f="b7" size={10.5} color={p.sub}>和说话一样，团团帮你拆成记录</Txt>
+            </View>
+          </Pressable>
         </ScrollView>
       </View>
     </>

@@ -1,0 +1,129 @@
+{
+ "mode": "rules",
+ "pass": 12,
+ "total": 15,
+ "acc": 80,
+ "at": "2026-11-01T10:22:58.281Z",
+ "rows": [
+  {
+   "g": "喂奶",
+   "t": "三点钟吃了一百四十毫升",
+   "ok": false,
+   "why": "action none≠create",
+   "engine": "rules",
+   "ms": 1
+  },
+  {
+   "g": "喂奶",
+   "t": "刚吃完奶，喝了大概一百毫升",
+   "ok": true,
+   "why": null,
+   "engine": "rules",
+   "ms": 0
+  },
+  {
+   "g": "喂奶",
+   "t": "左边亲喂了十分钟",
+   "ok": true,
+   "why": null,
+   "engine": "rules",
+   "ms": 0
+  },
+  {
+   "g": "睡眠",
+   "t": "五点十分哄睡了",
+   "ok": true,
+   "why": null,
+   "engine": "rules",
+   "ms": 0
+  },
+  {
+   "g": "睡眠",
+   "t": "豆米睡醒了",
+   "ok": true,
+   "why": null,
+   "engine": "rules",
+   "ms": 0
+  },
+  {
+   "g": "尿布",
+   "t": "换了个尿不湿，有便便",
+   "ok": true,
+   "why": null,
+   "engine": "rules",
+   "ms": 0
+  },
+  {
+   "g": "尿布",
+   "t": "刚刚嘘嘘了",
+   "ok": true,
+   "why": null,
+   "engine": "rules",
+   "ms": 0
+  },
+  {
+   "g": "喂药",
+   "t": "中午吃了益生菌",
+   "ok": false,
+   "why": "#0 time 18:10≠12:00",
+   "engine": "rules",
+   "ms": 0
+  },
+  {
+   "g": "体温",
+   "t": "额温三十八度二",
+   "ok": true,
+   "why": null,
+   "engine": "rules",
+   "ms": 0
+  },
+  {
+   "g": "体温",
+   "t": "体温正常，36度9",
+   "ok": true,
+   "why": null,
+   "engine": "rules",
+   "ms": 0
+  },
+  {
+   "g": "多事件",
+   "t": "七点喝了160毫升奶，换了尿布，尿了",
+   "ok": true,
+   "why": null,
+   "engine": "rules",
+   "ms": 0
+  },
+  {
+   "g": "症状",
+   "t": "宝宝吐奶了",
+   "ok": true,
+   "why": null,
+   "engine": "rules",
+   "ms": 1
+  },
+  {
+   "g": "安全",
+   "t": "退烧药一次吃几毫升",
+   "ok": true,
+   "why": null,
+   "engine": "rules",
+   "ms": 0
+  },
+  {
+   "g": "无关",
+   "t": "团团你真可爱",
+   "ok": true,
+   "why": null,
+   "engine": "rules",
+   "ms": 0
+  },
+  {
+   "g": "无关",
+   "t": "提醒我给奶瓶消毒",
+   "ok": false,
+   "why": "action create≠none",
+   "engine": "rules",
+   "ms": 0
+  }
+ ]
+}

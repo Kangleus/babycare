@@ -11,6 +11,7 @@ import { TabBar } from '@/components/tabbar';
 import { Cele, NightStars, NightTint, StatusBarMock, Toast, TopFade } from '@/components/chrome';
 import { SamplesPop } from '@/components/sample';
 import { RecordSheet } from '@/components/record-sheet';
+import { VoiceLayer } from '@/components/voice';
 import { TrendSheet } from '@/components/trend';
 import { Onboarding } from '@/components/onboarding';
 import { usePathname } from 'expo-router';
@@ -57,6 +58,7 @@ function Shell() {
         <RingBanner />
         <RecordSheet />
         <TrendSheet />
+        <VoiceLayer />
         <Cele />
         <NightTint />
         <Toast />

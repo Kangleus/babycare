@@ -1,0 +1,249 @@
+{
+ "mode": "rules",
+ "pass": 30,
+ "total": 30,
+ "acc": 100,
+ "at": "2026-11-01T10:22:58.210Z",
+ "rows": [
+  {
+   "g": "喂奶",
+   "t": "十点喝了120毫升奶，拉了一次",
+   "ok": true,
+   "why": null,
+   "engine": "rules",
+   "ms": 2
+  },
+  {
+   "g": "喂奶",
+   "t": "刚喂了一瓶奶",
+   "ok": true,
+   "why": null,
+   "engine": "rules",
+   "ms": 1
+  },
+  {
+   "g": "喂奶",
+   "t": "下午两点亲喂了二十分钟",
+   "ok": true,
+   "why": null,
+   "engine": "rules",
+   "ms": 0
+  },
+  {
+   "g": "喂奶",
+   "t": "早上七点四十喝了一百七十毫升奶粉",
+   "ok": true,
+   "why": null,
+   "engine": "rules",
+   "ms": 0
+  },
+  {
+   "g": "喂奶",
+   "t": "吸出来的母乳喂了九十毫升",
+   "ok": true,
+   "why": null,
+   "engine": "rules",
+   "ms": 0
+  },
+  {
+   "g": "喂奶",
+   "t": "半小时前喂了180毫升",
+   "ok": true,
+   "why": null,
+   "engine": "rules",
+   "ms": 0
+  },
+  {
+   "g": "喂奶",
+   "t": "昨天晚上十一点喂了一次奶，150毫升",
+   "ok": true,
+   "why": null,
+   "engine": "rules",
+   "ms": 0
+  },
+  {
+   "g": "喂奶",
+   "t": "刚才那次是150不是120",
+   "ok": true,
+   "why": null,
+   "engine": "rules",
+   "ms": 0
+  },
+  {
+   "g": "睡眠",
+   "t": "刚刚睡着了",
+   "ok": true,
+   "why": null,
+   "engine": "rules",
+   "ms": 1
+  },
+  {
+   "g": "睡眠",
+   "t": "宝宝从一点睡到三点半",
+   "ok": true,
+   "why": null,
+   "engine": "rules",
+   "ms": 0
+  },
+  {
+   "g": "睡眠",
+   "t": "宝宝醒了",
+   "ok": true,
+   "why": null,
+   "engine": "rules",
+   "ms": 0
+  },
+  {
+   "g": "尿布",
+   "t": "九点五十换了尿布，尿了",
+   "ok": true,
+   "why": null,
+   "engine": "rules",
+   "ms": 0
+  },
+  {
+   "g": "尿布",
+   "t": "又拉又尿，换了个尿不湿",
+   "ok": true,
+   "why": null,
+   "engine": "rules",
+   "ms": 0
+  },
+  {
+   "g": "尿布",
+   "t": "拉了一次臭臭",
+   "ok": true,
+   "why": null,
+   "engine": "rules",
+   "ms": 0
+  },
+  {
+   "g": "喂药",
+   "t": "喂了一滴维生素D",
+   "ok": true,
+   "why": null,
+   "engine": "rules",
+   "ms": 0
+  },
+  {
+   "g": "喂药",
+   "t": "刚喂了美林",
+   "ok": true,
+   "why": null,
+   "engine": "rules",
+   "ms": 0
+  },
+  {
+   "g": "体温",
+   "t": "量了体温三十七度六",
+   "ok": true,
+   "why": null,
+   "engine": "rules",
+   "ms": 0
+  },
+  {
+   "g": "体温",
+   "t": "体温36.8度，耳温",
+   "ok": true,
+   "why": null,
+   "engine": "rules",
+   "ms": 0
+  },
+  {
+   "g": "体温",
+   "t": "38度5，刚吃了一次退烧药",
+   "ok": true,
+   "why": null,
+   "engine": "rules",
+   "ms": 0
+  },
+  {
+   "g": "多事件",
+   "t": "八点喝了150毫升奶然后睡着了",
+   "ok": true,
+   "why": null,
+   "engine": "rules",
+   "ms": 1
+  },
+  {
+   "g": "多事件",
+   "t": "刚洗完澡，洗了十五分钟，然后喝了30毫升水",
+   "ok": true,
+   "why": null,
+   "engine": "rules",
+   "ms": 0
+  },
+  {
+   "g": "多事件",
+   "t": "量了身高68.5，体重8.2公斤",
+   "ok": true,
+   "why": null,
+   "engine": "rules",
+   "ms": 0
+  },
+  {
+   "g": "症状",
+   "t": "脸上起了几个小红点",
+   "ok": true,
+   "why": null,
+   "engine": "rules",
+   "ms": 0
+  },
+  {
+   "g": "症状",
+   "t": "咳嗽了几声，流了点鼻涕",
+   "ok": true,
+   "why": null,
+   "engine": "rules",
+   "ms": 0
+  },
+  {
+   "g": "安全",
+   "t": "宝宝发烧39度要吃多少美林",
+   "ok": true,
+   "why": null,
+   "engine": "rules",
+   "ms": 0
+  },
+  {
+   "g": "安全",
+   "t": "该给宝宝喂多少水",
+   "ok": true,
+   "why": null,
+   "engine": "rules",
+   "ms": 0
+  },
+  {
+   "g": "无关",
+   "t": "今天天气真好",
+   "ok": true,
+   "why": null,
+   "engine": "rules",
+   "ms": 0
+  },
+  {
+   "g": "无关",
+   "t": "你好团团",
+   "ok": true,
+   "why": null,
+   "engine": "rules",
+   "ms": 0
+  },
+  {
+   "g": "无关",
+   "t": "帮我买一罐奶粉",
+   "ok": true,
+   "why": null,
+   "engine": "rules",
+   "ms": 0
+  },
+  {
+   "g": "无关",
+   "t": "明天要上班好累啊",
+   "ok": true,
+   "why": null,
+   "engine": "rules",
+   "ms": 0
+  }
+ ]
+}

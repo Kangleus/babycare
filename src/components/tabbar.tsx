@@ -1,11 +1,12 @@
 /* 底部 Tab：今天 · 健康 · 团团(按住说话) · 问团子 · 我的 —— 原型 .tabbar/.tab/.mic */
-import { useEffect, useMemo, useState } from 'react';
-import { Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Animated, Easing, GestureResponderEvent, Pressable, StyleSheet, View } from 'react-native';
 import { TabTrigger, TabTriggerSlotProps } from 'expo-router/ui';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon, Tuan } from '@/lib/svg';
 import type { IconName } from '@/lib/art';
 import { useApp } from '@/state/app-state';
+import { voice } from '@/state/voice';
 import { LVACC } from '@/data/mock';
 import { hard } from '@/theme/tokens';
 import { IS_WEB } from './chrome';
@@ -23,25 +24,47 @@ function TabBtn({ isFocused, label, icon, ...rest }: TabTriggerSlotProps & { lab
   );
 }
 
+/* 按住团子说话（原型 micDown/micMove/micUp）：按住 180ms 开始录音，上滑 >90px 取消，<450ms 视为点按 */
 function Mic() {
-  const { p, night, lvl, showToast } = useApp();
+  const { p, night, lvl, baby, showToast } = useApp();
   const [spin] = useState(() => new Animated.Value(0));
+  const [down, setDown] = useState(false);
+  const g = useRef({ y: 0, t: 0, timer: null as ReturnType<typeof setTimeout> | null, on: false });
   useEffect(() => {
     const a = Animated.loop(Animated.timing(spin, { toValue: 1, duration: 14000, easing: Easing.linear, useNativeDriver: !IS_WEB }));
     a.start(); return () => a.stop();
   }, [spin]);
   const rot = useMemo(() => spin.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] }), [spin]);
+  const grant = (e: GestureResponderEvent) => {
+    if (!baby || voice.get().phase !== 'idle') return;
+    const st = g.current; st.y = e.nativeEvent.pageY; st.t = Date.now(); st.on = false; setDown(true);
+    st.timer = setTimeout(() => { st.on = true; voice.h.begin(); }, 180);
+  };
+  const move = (e: GestureResponderEvent) => {
+    if (!g.current.on || voice.get().phase !== 'listen') return;
+    const c = g.current.y - e.nativeEvent.pageY > 90;
+    if (c !== voice.get().cancel) voice.set({ cancel: c });
+  };
+  const release = () => {
+    const st = g.current; setDown(false);
+    if (st.timer) clearTimeout(st.timer); st.timer = null;
+    if (!st.on) { if (voice.get().phase === 'idle') showToast('要按住团子说话哦～'); return; }
+    st.on = false; voice.h.end(Date.now() - st.t < 450);
+  };
   return (
     <View style={s.micCell}>
-      <Pressable
-        accessibilityLabel="按住说话"
-        onLongPress={() => showToast('语音记录在 M3 接入，先用卡片「+」记一笔')}
-        onPress={() => showToast('要按住团子说话哦～')}
-        style={({ pressed }) => [s.mic, { backgroundColor: p.yellow, borderColor: p.ink }, pressed ? { transform: [{ translateY: 5 }, { scale: 0.94 }] } : hard(p, 5)]}>
+      <View
+        testID="mic"
+        accessible accessibilityRole="button" accessibilityLabel="按住说话"
+        onStartShouldSetResponder={() => true}
+        onMoveShouldSetResponder={() => true}
+        onResponderTerminationRequest={() => false}
+        onResponderGrant={grant} onResponderMove={move} onResponderRelease={release} onResponderTerminate={release}
+        style={[s.mic, { backgroundColor: p.yellow, borderColor: p.ink }, IS_WEB && ({ userSelect: 'none', touchAction: 'none', cursor: 'pointer' } as object), down ? { transform: [{ translateY: 5 }, { scale: 0.94 }] } : hard(p, 5)]}>
         <Animated.View pointerEvents="none" style={[s.ring, { borderColor: p.pink, transform: [{ rotate: rot }] }]} />
         <View style={{ marginTop: 6 }} pointerEvents="none"><Tuan mood={night ? 'drowsy' : 'idle'} acc={night ? ['cap'] : LVACC[lvl]} size={78} /></View>
         <View style={s.lbl} pointerEvents="none"><Txt f="b9" size={10.5}>按住说话</Txt></View>
-      </Pressable>
+      </View>
     </View>
   );
 }

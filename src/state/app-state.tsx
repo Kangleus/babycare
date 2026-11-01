@@ -31,7 +31,7 @@ type AppState = {
   sample: number; setSample: (i: number) => void;
   toast: string | null; showToast: (t: string, ms?: number) => void;
   cele: Cele; celebrate: (c: Cele) => void;
-  addRecord: (r: Omit<NewRecord, 'babyId' | 'createdBy' | 'src'>) => Promise<{ lvUp: boolean; rec: BabyRecord }>;
+  addRecord: (r: Omit<NewRecord, 'babyId' | 'createdBy' | 'src'> & { src?: NewRecord['src'] }) => Promise<{ lvUp: boolean; rec: BabyRecord }>;
   updateRecord: (id: string, patch: Parameters<ReturnType<typeof getRepo>['updateRecord']>[1]) => Promise<void>;
   deleteRecord: (id: string) => Promise<void>;
   saveBaby: (b: Baby) => Promise<void>;
@@ -101,7 +101,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const addRecord = useCallback<AppState['addRecord']>(async r => {
     if (!baby) throw new Error('no baby');
     const me = members.find(m => m.isLocal) ?? LOCAL_MEMBER;
-    const rec = await repo.addRecord({ ...r, babyId: baby.id, createdBy: me.name, src: 'manual' });
+    const rec = await repo.addRecord({ ...r, babyId: baby.id, createdBy: me.name, src: r.src ?? 'manual' });
     /* 结束上一段「进行中」的睡眠（原型 commit()） */
     if (r.type === 'sleep') {
       const on = records.find(x => x.type === 'sleep' && !x.endTime && x.id !== rec.id && new Date(x.time) < new Date(r.time));
