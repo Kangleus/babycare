@@ -1,4 +1,4 @@
-/* 一句记 M3：语音一句话 → 结构化记录。App（本地兜底 / 展示）与 Edge Function（Deno）共用这一份纯 TS 代码：
+/* 团子育儿本 M3：语音一句话 → 结构化记录。App（本地兜底 / 展示）与 Edge Function（Deno）共用这一份纯 TS 代码：
    不 import 任何东西，不读环境变量，不碰 key。
    - 热词上下文（Fun-ASR input.context）
    - 大模型提示词 + JSON 结构
@@ -70,7 +70,7 @@ export function resolveTime(t: TSpec, ctx: Ctx): { iso: string; given: boolean }
 }
 
 /* ---------- 提示词 ---------- */
-export const SYSTEM_PROMPT = `你是育儿记录 App「一句记」里的记录助手「团团」。家长说了一句话（语音转写，可能有错别字、口语数字），你只负责把它拆成结构化记录，输出 JSON。
+export const SYSTEM_PROMPT = `你是育儿记录 App「团子育儿本」里的记录助手「团团」。家长说了一句话（语音转写，可能有错别字、口语数字），你只负责把它拆成结构化记录，输出 JSON。
 硬性规则：
 1. 只抽取家长说出的事实；不诊断、不解释病因、不建议用药或剂量、不建议喝水量、不给任何育儿建议。
 2. 家长在提问（如“要吃多少药”“喂多少水”“是不是发烧了”）时，把 advice 设为 true；如果问题里带了可记录的事实（如“39度要吃多少美林”里的体温 39），仍要记下事实。

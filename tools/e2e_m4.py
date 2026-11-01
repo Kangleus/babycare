@@ -1,4 +1,4 @@
-"""一句记 M4 健康 Tab 端到端（本地 / 未登录）：390x844，时钟从 2026-10-31 10:20 起。
+"""团子育儿本 M4 健康 Tab 端到端（本地 / 未登录）：390x844，时钟从 2026-10-31 10:20 起。
 跑法：python3 -m http.server 8090 -d dist &  然后  /workspace/.venv-proto/bin/python tools/e2e_m4.py"""
 import asyncio, datetime, json, re, sys
 from playwright.async_api import async_playwright

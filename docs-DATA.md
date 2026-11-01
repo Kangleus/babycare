@@ -1,4 +1,4 @@
-# 一句记 · 数据层（M1 本地版）
+# 团子育儿本 · 数据层（M1 本地版）
 
 - `src/data/types.ts`：`BabyRecord`（id, babyId, type, time, endTime, values, note, createdBy, src, createdAt, updatedAt）、`Baby`、`Member`、`Settings`。
 - `src/data/repo.ts`：`Repo` 接口 + `LocalRepo`（AsyncStorage，键 `yj:v1:*`）。**`getRepo()` 是唯一入口**——M2 云端版在这里按登录态返回 `SupabaseRepo implements Repo`，UI 和 `src/state/app-state.tsx` 不需要改。

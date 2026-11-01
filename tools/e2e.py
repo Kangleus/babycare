@@ -1,4 +1,4 @@
-"""一句记 M1/M2 端到端测试：390x844，时钟固定从 2026-10-31 10:20 起走。
+"""团子育儿本 M1/M2 端到端测试：390x844，时钟固定从 2026-10-31 10:20 起走。
 跑法：python3 -m http.server 8090 -d dist &  然后  /workspace/.venv-proto/bin/python tools/e2e.py"""
 import asyncio, datetime, re, sys
 from playwright.async_api import async_playwright

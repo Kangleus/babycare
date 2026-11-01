@@ -142,7 +142,7 @@ export function InviteBody({ onClose }: { onClose: () => void }) {
   }, [n]);
   const exp = inv ? new Date(inv.expiresAt) : null;
   const expTxt = exp ? `${exp.getMonth() + 1}月${exp.getDate()}日 ${String(exp.getHours()).padStart(2, '0')}:${String(exp.getMinutes()).padStart(2, '0')}` : '';
-  const text = inv ? `我在「一句记」记录${baby?.name ?? '宝宝'}的吃喝拉撒睡，邀请你一起记～\n打开一句记 → 我的 → 加入家庭，输入邀请码：${inv.code}\n（${expTxt} 前有效，只能用一次）` : '';
+  const text = inv ? `我在「团子育儿本」记录${baby?.name ?? '宝宝'}的吃喝拉撒睡，邀请你一起记～\n打开团子育儿本 → 我的 → 加入家庭，输入邀请码：${inv.code}\n（${expTxt} 前有效，只能用一次）` : '';
   const share = async () => {
     try {
       if (Platform.OS === 'web') {

@@ -104,9 +104,9 @@ export default function Me() {
           <Li testID="reset-demo" icon="star" iconBg={p.yellow} t="重置演示数据" sub="恢复豆米的演示记录" onPress={askReset} />
           <Li testID="clear-all" icon="warn" iconBg={p.coral} t="清空全部数据" sub="删除本机的宝宝资料和所有记录" onPress={askClear} />
           <Li testID="policy" icon="shield" iconBg={p.blue} t="隐私政策与用户协议" sub="草案 · 待法务审核" onPress={() => setSub('policy')} />
-          <Li testID="about" icon="doc" iconBg={p.green} t="关于一句记" sub={`v${VERSION} · ${linked ? '云端同步' : '本地版'}`} onPress={() => setSub('about')} last />
+          <Li testID="about" icon="doc" iconBg={p.green} t="关于团子育儿本" sub={`v${VERSION} · ${linked ? '云端同步' : '本地版'}`} onPress={() => setSub('about')} last />
         </List>
-        <Txt f="b7" size={11} color={p.sub} style={{ textAlign: 'center', marginTop: 18, lineHeight: 17.6 }}>一句记 v{VERSION} · {linked ? `云端同步 · ${syncT}` : signedIn ? '已登录 · 未加入家庭' : '本地版（未登录）'}{'\n'}共 {records.length} 条记录{linked ? '，和家人实时同步' : '，全部保存在这台设备'}</Txt>
+        <Txt f="b7" size={11} color={p.sub} style={{ textAlign: 'center', marginTop: 18, lineHeight: 17.6 }}>团子育儿本 v{VERSION} · {linked ? `云端同步 · ${syncT}` : signedIn ? '已登录 · 未加入家庭' : '本地版（未登录）'}{'\n'}共 {records.length} 条记录{linked ? '，和家人实时同步' : '，全部保存在这台设备'}</Txt>
       </Page>
 
       <Modal visible={sub === 'profile'} animationType="slide" onRequestClose={() => setSub(null)}>
@@ -148,7 +148,7 @@ export default function Me() {
       </Sheet>
 
       <Sheet open={sub === 'about'} onClose={() => setSub(null)} testID="about-sheet">
-        <Heard mood="happy" acc={acc} t="关于一句记" sub={`版本 v${VERSION} · ${linked ? '云端同步' : '本地版'}`} />
+        <Heard mood="happy" acc={acc} t="关于团子育儿本" sub={`版本 v${VERSION} · ${linked ? '云端同步' : '本地版'}`} />
         <View style={[s.dash, { backgroundColor: p.bg2, borderColor: p.line }]}>
           {[['存储', linked ? `本机 + 云端（${c.link!.familyName}）` : '只存在这台设备（未登录）'], ['记录', `${records.length} 条`], ['成长', `团团 Lv.${lvl} · ${xp}/${xpMax}`], ['说明', '不做诊断、不推荐剂量 · 仅供参考']].map(([k, v]) => (
             <View key={k} style={s.kv}><Txt f="b8" size={12.5} color={p.sub} style={{ width: 64 }}>{k}</Txt><Txt f="b8" size={12.5} style={{ flex: 1 }}>{v}</Txt></View>

@@ -1,3 +1,13 @@
+# 团子育儿本
+
+按住团子说一句话，就能记下宝宝的喂奶、睡觉、尿布、体温和用药；家人共享、只记录不诊断。
+
+- 在线体验（Web 构建）：https://kangleus.github.io/babycare/
+- 技术栈：Expo / React Native（expo-router）+ Supabase（项目 Baby）
+- 文档：`docs-DATA.md`（本地数据层）、`docs-CLOUD.md`（云端同步）
+
+---
+
 # Welcome to your Expo app 👋
 
 This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).

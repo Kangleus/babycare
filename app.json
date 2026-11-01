@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "一句记",
+    "name": "团子育儿本",
     "slug": "yijuji",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -39,7 +39,7 @@
       [
         "expo-audio",
         {
-          "microphonePermission": "允许「一句记」使用麦克风：按住团子说一句话就能记录宝宝的喂奶、睡觉和尿布"
+          "microphonePermission": "允许「团子育儿本」使用麦克风：按住团子说一句话就能记录宝宝的喂奶、睡觉和尿布"
         }
       ]
     ],

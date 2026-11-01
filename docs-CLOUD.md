@@ -1,4 +1,4 @@
-# 一句记 · 云端同步（M2 / Supabase 项目「Baby」）
+# 团子育儿本 · 云端同步（M2 / Supabase 项目「Baby」）
 
 项目：`wzfbdvlmkoeftvtnmiex`（ap-southeast-1）。客户端只用 publishable key（`src/data/cloud-config.ts`，可用
 `EXPO_PUBLIC_SUPABASE_URL` / `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` 覆盖），**App 里没有任何 service / secret key**。

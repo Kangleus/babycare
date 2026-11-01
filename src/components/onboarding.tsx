@@ -16,7 +16,7 @@ export const POLICY_DRAFT = [
   '1. 我们收集什么：你主动记录的宝宝信息（昵称、生日、性别）和喂奶、睡眠、尿布、体温、用药等记录。',
   '2. 存在哪里：当前版本所有数据只保存在这台设备上，不上传服务器。开通云端同步后，会在你登录并同意后再上传，用于家人之间共享。',
   '3. 语音：后续版本的语音记录在转成文字后不保存原始录音，不用于广告和模型训练。',
-  '4. 健康相关：一句记只记录你说的内容，不做诊断、不推荐用药剂量；身体不适请及时就医。',
+  '4. 健康相关：团子育儿本只记录你说的内容，不做诊断、不推荐用药剂量；身体不适请及时就医。',
   '5. 你的权利：可以随时在「我的 › 清空全部数据」删除本机全部数据，或导出数据（后续版本）。',
   '6. 联系我们：正式版本会在此处提供联系方式。',
 ];
@@ -66,7 +66,7 @@ export function Onboarding() {
   const [agree, setAgree] = useState(false);
   if (!settings.consentAt) {
     return (
-      <FullPage bg={p.yellow} title="欢迎来到一句记" testID="ob-consent">
+      <FullPage bg={p.yellow} title="欢迎来到团子育儿本" testID="ob-consent">
         <FullHero mood="happy" acc={['sprout']} line="一句话记下宝宝的吃睡拉，团团帮你算" />
         <FullCard>
           <View style={s.ttl}>
