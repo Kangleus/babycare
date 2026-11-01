@@ -140,8 +140,14 @@ async def main():
     await shotA('13-delete-step1.png'); await TA('confirm-ok').click(); await A.wait_for_timeout(1200)
     await shotA('14-delete-step2.png'); await TA('confirm-ok').click(); await A.wait_for_timeout(5000)
     check('A: after delete account → back to onboarding', await TA('ob-consent').is_visible())
-    await tabB('我的'); await B.wait_for_timeout(3000)
-    check('B: family still exists, A gone (B only)', '妈妈' not in (await B.locator('body').inner_text()).split('家庭成员')[1].split('账号')[0])
+    await tabB('我的')
+    # 成员列表靠实时推送/轮询刷新，最多等 12 秒（之前固定等 3 秒偶发偏早读到旧列表）
+    gone=False
+    for _ in range(24):
+        await B.wait_for_timeout(500)
+        body=await B.locator('body').inner_text()
+        if '家庭成员' in body and '妈妈' not in body.split('家庭成员')[1].split('账号')[0]: gone=True; break
+    check('B: family still exists, A gone (B only)', gone)
     await shotB('15-B-after-A-deleted.png')
 
     # 注销后账号已不存在，supabase-js 退出时调 /logout 会得到 403（库会忽略并清掉本地会话），这条浏览器日志是预期的
