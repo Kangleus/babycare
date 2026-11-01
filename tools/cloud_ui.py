@@ -94,6 +94,37 @@ async def main():
     await shotA('10-home-A-realtime.png'); await shotB('10-home-B.png')
     side('10-home-B.png','10-home-A-realtime.png','11-two-user-sync.png',(f'B 爸爸的手机：刚记一条换尿布',f'A 妈妈的手机：{hit:.1f} 秒后实时出现' if hit else 'A：未收到'))
 
+    # ---- M4：健康提醒 / 病程同步给家人，显示谁完成 ----
+    import json as _j
+    await tabA('健康'); await TA('rem-new').scroll_into_view_if_needed(); await TA('rem-new').click(); await A.wait_for_timeout(700)
+    await TA('rem-title').fill('复诊带上病历本'); await TA('rem-cat-visit').click(); await TA('rem-save').click(); await A.wait_for_timeout(1500)
+    hA=_j.loads(await A.evaluate("localStorage.getItem('yj:v1:health')")); rid=[x for x in hA['reminders'] if x['title']=='复诊带上病历本'][0]['id']
+    await tabB('健康'); hit=None; t0=time.time()
+    for _ in range(120):
+      if await TB(f'rem-{rid}').count()>0: hit=time.time()-t0; break
+      await B.wait_for_timeout(100)
+    check('B: sees A\'s new reminder', hit is not None, f'{hit:.1f}s' if hit else 'timeout')
+    check('B: demo reminders of A were not uploaded', '喂维生素 D' not in await TB('rem-card').inner_text())
+    await TB(f'rem-{rid}').scroll_into_view_if_needed(); await TB(f'rem-{rid}-box').click(); await B.wait_for_timeout(500)
+    t0=time.time(); hit=None
+    for _ in range(150):
+      if '爸爸完成' in await TA('rem-card').inner_text(): hit=time.time()-t0; break
+      await A.wait_for_timeout(100)
+    check('A: sees reminder completed by 爸爸 (who completed)', hit is not None, f'{hit:.1f}s' if hit else 'timeout')
+    await TA('rem-card').scroll_into_view_if_needed(); await TB('rem-card').scroll_into_view_if_needed()
+    await shotA('../m4/cloud-A-reminder-done-by-B.png'); await shotB('../m4/cloud-B-completed.png')
+    side('../m4/cloud-B-completed.png','../m4/cloud-A-reminder-done-by-B.png','../m4/cloud-reminder-sync.png',('B 爸爸：勾掉「复诊带上病历本」','A 妈妈：显示「爸爸完成」'))
+    # B 开始一次病程 → A 看到进行中
+    await TB('ht-ill').scroll_into_view_if_needed(); await TB('ep-new').scroll_into_view_if_needed(); await TB('ep-new').click(); await B.wait_for_timeout(600)
+    await TB('ep-quick-咳嗽').click(); await TB('ep-save').click(); await B.wait_for_timeout(500)
+    hit=None
+    for _ in range(150):
+      if await TA('ep-open').count()>0: hit=True; break
+      await A.wait_for_timeout(100)
+    check('A: sees B\'s new episode (进行中)', hit is not None and '咳嗽' in await TA('ill-tab').inner_text())
+    await TA('ep-open').scroll_into_view_if_needed(); await shotA('../m4/cloud-A-sees-episode.png')
+    await tabA('今天'); await tabB('今天')
+
     # ---- C：登录后看不到这个家庭；用过的邀请码也进不去 ----
     await obC('团子')
     await loginC(env['YJ_IT_C'])

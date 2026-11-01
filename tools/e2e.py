@@ -100,8 +100,16 @@ async def main():
     check('sample pill below hint & above 今日时间线 (no overlap)', pill['y']>=hint['y']+hint['height'] and pill['y']+pill['height']<=tlc['y'], (hint,pill,tlc))
 
 
+    async def open_trend(k):
+      if k=='temp':  # M4：首页体温卡片进健康页，趋势从健康页「看趋势」打开
+        await T('card-temp').click(); await r.wait_for_timeout(900)
+        await T('h-trend-temp').first.click(); await r.wait_for_timeout(900)
+      else: await T(f'card-{k}').click(); await r.wait_for_timeout(900)
+    async def close_trend(k):
+      await T('trend-close').click(); await r.wait_for_timeout(600)
+      if k=='temp': await home()
     async def check_trend(k,rngs=(7,30)):
-      await T(f'card-{k}').click(); await r.wait_for_timeout(900)
+      await open_trend(k)
       for rng in rngs:
         await T(f'range-{rng}').click(); await r.wait_for_timeout(300)
         cur,prev,n=await expected_avg(r,k,rng)
@@ -110,7 +118,7 @@ async def main():
         if prev is None: check(f'trend {k} {rng}d: previous period empty', '还没有记录' in cmp, cmp)
         else: check(f'trend {k} {rng}d prev avg {fmt_avg(k,prev)} in comparison', ('日均 '+fmt_avg(k,prev)) in cmp, cmp)
       await shot(f'm1/trend-{k}-avg.png')
-      await T('trend-close').click(); await r.wait_for_timeout(600)
+      await close_trend(k)
     # ---------- 1b. trend averages on fresh demo data ----------
     await check_trend('feed'); await check_trend('temp')
 
@@ -181,7 +189,7 @@ async def main():
     await T('range-30').click(); await shot('m1/trend-feed-30d.png')
     await T('trend-close').click(); await r.wait_for_timeout(600)
     for k in ['sleep','temp']:
-      await T(f'card-{k}').click(); await r.wait_for_timeout(900); await shot(f'm1/trend-{k}.png'); await T('trend-close').click(); await r.wait_for_timeout(600)
+      await open_trend(k); await shot(f'm1/trend-{k}.png'); await close_trend(k)
     await T('pred').scroll_into_view_if_needed(); await shot('m1/pred.png')
 
     # ---------- 5. change cards (+ optional sheets) ----------

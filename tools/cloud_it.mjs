@@ -86,14 +86,62 @@ await sleep(1500);
 check('RLS: C receives nothing via realtime', gotC.length === 0, `${gotC.length} events`);
 await A.removeChannel(ch); await C.removeChannel(chC);
 
+// —— M4 健康：病程 / 过敏 / 疫苗 / 提醒（RLS、服务端填写人、完成人、Realtime）——
+const uidB = (await B.auth.getUser()).data.user.id;
+const ep = { id: tag + '-ep', baby_id: babyId, family_id: '00000000-0000-0000-0000-000000000000', title: '发烧', start_date: '2026-10-30', status: 'active', visits: [{ id: 'v1', time: new Date().toISOString(), title: '社区医院儿科' }], created_by_name: '冒充' };
+const { data: epIns, error: h1 } = await A.from('episodes').insert(ep).select().single();
+check('A insert episode (family_id taken from baby, created_by forced)', !h1 && epIns?.family_id === fam && epIns?.created_by === uidA && epIns?.created_by_name === '妈妈', h1?.message ?? `${epIns?.family_id} ${epIns?.created_by_name}`);
+const { error: h2 } = await A.from('allergies').insert({ id: tag + '-al', baby_id: babyId, family_id: fam, name: '鸡蛋' });
+const { error: h3 } = await A.from('vaccines').insert({ id: tag + '-vx', baby_id: babyId, family_id: fam, name: '流感疫苗 第 1 剂', given_on: '2026-10-06' });
+check('A insert allergy + vaccine', !h2 && !h3, h2?.message ?? h3?.message);
+const rem = { id: tag + '-rm', baby_id: babyId, family_id: fam, cat: 'med', title: '喂维生素 D', due_at: new Date().toISOString(), repeat: 'daily', source: 'user', confirmed: true, done_by_name: '冒充' };
+const { data: remIns, error: h4 } = await A.from('reminders').insert(rem).select().single();
+check('A insert reminder (done_by_name cannot be faked while not done)', !h4 && remIns?.done_by === null && remIns?.done_by_name === null, h4?.message ?? JSON.stringify(remIns && { b: remIns.done_by, n: remIns.done_by_name }));
+for (const t of ['episodes', 'allergies', 'vaccines', 'reminders']) {
+  const { data: cr } = await C.from(t).select('id').eq('baby_id', babyId);
+  check(`RLS: C cannot read ${t}`, (cr ?? []).length === 0);
+  const { data: an, error: ae } = await anon.from(t).select('id');
+  check(`anon cannot read ${t}`, !!ae || (an ?? []).length === 0, ae?.message);
+}
+const { error: cEp } = await C.from('episodes').insert({ ...ep, id: tag + '-cep' });
+check('RLS: C cannot insert episode into family baby', !!cEp, cEp?.message);
+const { error: cRm } = await C.from('reminders').insert({ ...rem, id: tag + '-crm' });
+check('RLS: C cannot insert reminder into family baby', !!cRm, cRm?.message);
+const { data: cRu } = await C.from('reminders').update({ done_at: new Date().toISOString() }).eq('id', rem.id).select();
+check('RLS: C cannot complete family reminder', (cRu ?? []).length === 0);
+const { data: cAd } = await C.from('allergies').delete().eq('id', tag + '-al').select();
+check('RLS: C cannot delete family allergy', (cAd ?? []).length === 0);
+// Realtime：A 订阅提醒，B 点完成 → A 收到，且服务端写入完成人「爸爸」
+const gotR = [];
+const chR = A.channel('itr-' + tag).on('postgres_changes', { event: '*', schema: 'public', table: 'reminders', filter: `baby_id=eq.${babyId}` }, p => gotR.push(p));
+await new Promise(res => chR.subscribe(s => { if (s === 'SUBSCRIBED') res(); }));
+await sleep(2500);
+const { data: bDone, error: h5 } = await B.from('reminders').update({ done_at: new Date().toISOString(), done_by_name: '冒充妈妈' }).eq('id', rem.id).select().single();
+check('B completes shared reminder → done_by = B, done_by_name = 爸爸 (server-set)', !h5 && bDone?.done_by === uidB && bDone?.done_by_name === '爸爸', h5?.message ?? `${bDone?.done_by_name}`);
+for (let i = 0; i < 50 && !gotR.some(g => g.new?.id === rem.id && g.new?.done_by_name === '爸爸'); i++) await sleep(100);
+check('A receives reminder completion via realtime (shows who completed)', gotR.some(g => g.new?.id === rem.id && g.new?.done_by_name === '爸爸'), `${gotR.length} events`);
+const { data: unDone } = await A.from('reminders').update({ done_at: null }).eq('id', rem.id).select().single();
+check('un-complete clears done_by / done_by_name', unDone?.done_by === null && unDone?.done_by_name === null);
+await A.removeChannel(chR);
+const { data: bEp } = await B.from('episodes').select('id, visits, created_by_name').eq('baby_id', babyId);
+check('B (member) sees A\'s episode incl. visits', (bEp ?? []).length === 1 && bEp[0].visits.length === 1 && bEp[0].created_by_name === '妈妈');
+const { data: bUpd, error: h6 } = await B.from('episodes').update({ status: 'recovered', end_date: '2026-10-31', created_by_name: '冒充' }).eq('id', ep.id).select().single();
+check('B can mark episode recovered; creator kept', !h6 && bUpd?.status === 'recovered' && bUpd?.created_by_name === '妈妈' && bUpd?.created_by === uidA, h6?.message);
+const { error: badCat } = await A.from('reminders').insert({ ...rem, id: tag + '-bad', cat: 'dose' });
+check('check constraint: unknown reminder category rejected', !!badCat);
+
 // 清理：B 退出家庭、A 删除家庭（管理员）—— 用 delete_account 之外的普通权限
 const { error: eLeave } = await B.from('family_members').delete().eq('family_id', fam).eq('user_id', (await B.auth.getUser()).data.user.id);
 check('B can leave family', !eLeave, eLeave?.message);
 const { data: bAfter } = await B.from('records').select('id').eq('baby_id', babyId);
 check('after leaving, B cannot read', (bAfter ?? []).length === 0);
+const { data: bAfterH } = await B.from('reminders').select('id').eq('baby_id', babyId);
+check('after leaving, B cannot read reminders', (bAfterH ?? []).length === 0);
 const { error: eDel } = await A.rpc('delete_account');
 check('A delete_account (sole member → family, baby, records deleted)', !eDel, eDel?.message);
 const { data: aAfter, error: aAfterErr } = await A.from('records').select('id');
 check('A\'s old token sees nothing afterwards', !!aAfterErr || (aAfter ?? []).length === 0);
+const { data: hLeft, error: hLeftErr } = await A.from('episodes').select('id');
+check('health rows gone with the family', !!hLeftErr || (hLeft ?? []).length === 0);
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

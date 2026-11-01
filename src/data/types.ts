@@ -46,4 +46,23 @@ export type Settings = {
   sample: number;
   lvl: number; xp: number;
   demoSeeded: boolean;
+  /** 团团建议里点了「知道了」的条目（本机） */
+  sgGone?: string[];
 };
+
+/* —— M4 健康 —— */
+export type Visit = { id: string; time: string /* ISO */; title: string; note?: string };
+export type Episode = {
+  id: string; babyId: string; title: string; startDate: string /* YYYY-MM-DD */; endDate: string | null;
+  status: 'active' | 'recovered'; visits: Visit[]; note?: string; createdBy: string; createdAt: string; updatedAt: string;
+};
+export type Allergy = { id: string; babyId: string; name: string; note?: string; createdBy: string; createdAt: string; updatedAt: string };
+export type Vaccine = { id: string; babyId: string; name: string; date: string /* YYYY-MM-DD */; note?: string; createdBy: string; createdAt: string; updatedAt: string };
+export type RemCat = 'med' | 'visit' | 'vax' | 'check' | 'temp';
+export type Reminder = {
+  id: string; babyId: string; cat: RemCat; title: string; dueAt: string /* ISO，第一次到点 */; repeat: 'none' | 'daily' | 'weekly';
+  note?: string; source: 'user' | 'plan' | 'suggest'; planKey?: string; confirmed: boolean;
+  doneAt: string | null; doneBy: string | null; createdBy: string; createdAt: string; updatedAt: string;
+};
+export type HealthKind = 'episodes' | 'allergies' | 'vaccines' | 'reminders';
+export type HealthData = { episodes: Episode[]; allergies: Allergy[]; vaccines: Vaccine[]; reminders: Reminder[] };

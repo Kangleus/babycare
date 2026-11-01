@@ -8,7 +8,7 @@ import { CARDS, TYPE_IC } from '@/data/mock';
 import { cardVal, dayEvs, dur, Ev, evMeta, evTitle, fmt, leftSegs, predict, tm, totals } from '@/lib/calc';
 import { addDays, ageText, minOf, startOfDay } from '@/lib/time';
 import type { AvatarKey } from '@/data/types';
-import { hard, kindColor } from '@/theme/tokens';
+import { hard, Kind, kindColor } from '@/theme/tokens';
 import { ConfirmSheet, ConfirmOpts } from './confirm';
 import { fam, numStyle, Segs, Txt } from './txt';
 
@@ -122,7 +122,9 @@ export function EditBtn({ onPress }: { onPress: () => void }) {
 }
 
 export function HomeCards() {
-  const { p, night, cards, events, reminders, records, now, openRecord, openTrend } = useApp();
+  const { p, night, cards, events, reminders, records, now, openRecord, openTrend, goHealth } = useApp();
+  /* 原型 DETAIL：体温 / 吃药 / 症状卡进「健康 · 病程」，身高体重进「健康 · 疫苗体检」，其余看趋势 */
+  const tap = (k: Kind) => (k === 'temp' || k === 'med' || k === 'symptom' ? goHealth('ill', 'ill') : k === 'growth' ? goHealth('ill', 'vax') : openTrend(k));
   const { width } = useWindowDimensions();
   const cw = (width - 36 - 16) / 3; /* grid-template-columns: repeat(3,1fr); gap 8 */
   return (
@@ -131,7 +133,7 @@ export function HomeCards() {
         {cards.map(k => {
           const c = CARDS[k], v = cardVal(k, events, reminders, records, now), col = kindColor(p, k);
           return (
-            <Pressable key={k} testID={`card-${k}`} onPress={() => openTrend(k)} style={({ pressed }) => [s.sc, { width: cw,  backgroundColor: col.ks, borderColor: p.ink }, pressed ? s.pressed4 : hard(p, 4)]}>
+            <Pressable key={k} testID={`card-${k}`} onPress={() => tap(k)} style={({ pressed }) => [s.sc, { width: cw,  backgroundColor: col.ks, borderColor: p.ink }, pressed ? s.pressed4 : hard(p, 4)]}>
               <View style={[s.ic, { backgroundColor: col.k, borderColor: p.ink }]}><Icon name={c.ic} size={22} /></View>
               <Text testID={`card-${k}-v`} style={[s.v, numStyle(20), { color: p.ink }]}>{v.v}<Text style={{ ...fam('b8'), fontSize: 11, lineHeight: 11, letterSpacing: 0 }}>{v.u}</Text></Text>
               <View style={s.kRow}>

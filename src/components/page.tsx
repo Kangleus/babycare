@@ -1,5 +1,5 @@
-import { ReactNode } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ReactNode, RefObject } from 'react';
+import { ScrollView, ScrollViewInstance, StyleSheet, View } from 'react-native';
 import { useApp } from '@/state/app-state';
 import { Tuan } from '@/lib/svg';
 import type { Mood } from '@/lib/art';
@@ -8,10 +8,10 @@ import { useTopPad } from './chrome';
 import { Txt } from './txt';
 
 /* .page：padding 76px 18px 160px，可滚动 */
-export function Page({ children }: { children: ReactNode }) {
+export function Page({ children, sref }: { children: ReactNode; sref?: RefObject<ScrollViewInstance | null> }) {
   const top = useTopPad();
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: 'transparent' }} contentContainerStyle={{ paddingTop: top, paddingHorizontal: 18, paddingBottom: 160 }} showsVerticalScrollIndicator={false}>
+    <ScrollView ref={sref} style={{ flex: 1, backgroundColor: 'transparent' }} contentContainerStyle={{ paddingTop: top, paddingHorizontal: 18, paddingBottom: 160 }} showsVerticalScrollIndicator={false}>
       {children}
     </ScrollView>
   );

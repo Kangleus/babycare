@@ -15,12 +15,15 @@
     "expo-glass-effect": "~58.0.5",
     "expo-image": "~58.0.18",
     "expo-linking": "~58.0.15",
+    "expo-notifications": "~58.1.7",
     "expo-router": "~58.0.29",
+    "expo-sharing": "~58.0.21",
     "expo-splash-screen": "~58.0.12",
     "expo-status-bar": "~58.0.4",
     "expo-symbols": "~58.0.4",
     "expo-system-ui": "~58.0.7",
     "expo-web-browser": "~58.0.7",
+    "html-to-image": "^1.11.13",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "react-native": "0.88.1",
@@ -30,6 +33,7 @@
     "react-native-screens": "~4.30.1",
     "react-native-svg": "15.16.0",
     "react-native-url-polyfill": "^4.0.0",
+    "react-native-view-shot": "6.1.1",
     "react-native-web": "~0.21.4",
     "react-native-worklets": "0.13.0"
   },
@@ -53,7 +57,8 @@
     "check:night": "/workspace/.venv-proto/bin/python tools/night_check.py",
     "export:native": "expo export --platform ios --platform android --output-dir /tmp/native-export",
     "test:cloud": "node tools/cloud_it.mjs",
-    "test:cloud-ui": "/workspace/.venv-proto/bin/python tools/cloud_ui.py"
+    "test:cloud-ui": "/workspace/.venv-proto/bin/python tools/cloud_ui.py",
+    "e2e:m4": "/workspace/.venv-proto/bin/python tools/e2e_m4.py"
   },
   "private": true
 }

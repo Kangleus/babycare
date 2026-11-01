@@ -4,7 +4,7 @@
      SupabaseRepo 在它之上把每次写入排进 outbox 同步到云端（见 sync.ts）。
    ========================================================= */
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { Baby, BabyRecord, Member, NewRecord, RecordValues, Settings } from './types';
+import type { Baby, BabyRecord, HealthData, HealthKind, Member, NewRecord, RecordValues, Settings } from './types';
 import { DEF_CARDS } from './mock';
 
 export interface Repo {
@@ -21,12 +21,20 @@ export interface Repo {
   saveSettings(patch: Partial<Settings>): Promise<Settings>;
   /** 清空本机全部数据（回到首次启动） */
   clearAll(): Promise<void>;
+  /* —— M4 健康：病程 / 过敏 / 疫苗 / 提醒 —— */
+  getHealth(babyId: string): Promise<HealthData>;
+  putHealth<T extends HealthKind>(kind: T, item: HealthData[T][number]): Promise<HealthData[T][number]>;
+  deleteHealth(kind: HealthKind, id: string): Promise<void>;
+  /** 演示数据种子用（不同步） */
+  replaceHealth(babyId: string, h: HealthData): Promise<void>;
 }
+export const EMPTY_HEALTH = (): HealthData => ({ episodes: [], allergies: [], vaccines: [], reminders: [] });
+export const HEALTH_KINDS: HealthKind[] = ['episodes', 'allergies', 'vaccines', 'reminders'];
 
 export const DEFAULT_SETTINGS: Settings = { consentAt: null, onboarded: false, night: false, cards: DEF_CARDS, sample: 0, lvl: 3, xp: 37, demoSeeded: false };
 export const LOCAL_MEMBER: Member = { id: 'local', name: '妈妈', role: 'admin', isLocal: true };
 
-export const K = { baby: 'yj:v1:baby', records: 'yj:v1:records', settings: 'yj:v1:settings', members: 'yj:v1:members' };
+export const K = { baby: 'yj:v1:baby', records: 'yj:v1:records', settings: 'yj:v1:settings', members: 'yj:v1:members', health: 'yj:v1:health' };
 export const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 
 export class LocalRepo implements Repo {
@@ -56,12 +64,35 @@ export class LocalRepo implements Repo {
   async getMembers() { return this.read<Member[]>(K.members, [LOCAL_MEMBER]); }
   async getSettings() { return { ...DEFAULT_SETTINGS, ...(await this.read<Partial<Settings>>(K.settings, {})) }; }
   async saveSettings(patch: Partial<Settings>) { const s = { ...(await this.getSettings()), ...patch }; await this.write(K.settings, s); return s; }
-  async clearAll() { this.cache = null; await AsyncStorage.multiRemove(Object.values(K)); }
+  async clearAll() { this.cache = null; this.hcache = null; await AsyncStorage.multiRemove(Object.values(K)); }
+
+  private hcache: HealthData | null = null;
+  private async hall() { if (!this.hcache) this.hcache = { ...EMPTY_HEALTH(), ...(await this.read<Partial<HealthData>>(K.health, {})) }; return this.hcache; }
+  private hflush() { return this.write(K.health, this.hcache ?? EMPTY_HEALTH()); }
+  async getHealth(babyId: string): Promise<HealthData> {
+    const h = await this.hall();
+    return { episodes: h.episodes.filter(x => x.babyId === babyId), allergies: h.allergies.filter(x => x.babyId === babyId), vaccines: h.vaccines.filter(x => x.babyId === babyId), reminders: h.reminders.filter(x => x.babyId === babyId) };
+  }
+  async putHealth<T extends HealthKind>(kind: T, item: HealthData[T][number]) {
+    const h = await this.hall(); const list = h[kind] as HealthData[T][number][];
+    const next = { ...item, updatedAt: new Date().toISOString() } as HealthData[T][number];
+    const i = list.findIndex(x => x.id === item.id);
+    if (i < 0) list.push(next); else list[i] = next;
+    await this.hflush(); return next;
+  }
+  async deleteHealth(kind: HealthKind, id: string) { const h = await this.hall(); (h as Record<HealthKind, { id: string }[]>)[kind] = h[kind].filter(x => x.id !== id); await this.hflush(); }
+  async replaceHealth(babyId: string, d: HealthData) {
+    const h = await this.hall();
+    for (const k of HEALTH_KINDS) (h as Record<HealthKind, { id: string; babyId: string }[]>)[k] = [...h[k].filter(x => x.babyId !== babyId), ...d[k]];
+    await this.hflush();
+  }
 
   /* —— 同步引擎专用：直接改本地副本，不再排队上传 —— */
   async rawAll() { return [...(await this.all())]; }
   async rawSetRecords(list: BabyRecord[]) { this.cache = list; await this.flush(); }
   rawSaveBaby(b: Baby) { return LocalRepo.prototype.saveBaby.call(this, b); }
   rawSaveSettings(patch: Partial<Settings>) { return LocalRepo.prototype.saveSettings.call(this, patch); }
+  async rawHealth() { const h = await this.hall(); return { episodes: [...h.episodes], allergies: [...h.allergies], vaccines: [...h.vaccines], reminders: [...h.reminders] }; }
+  async rawSetHealth(d: HealthData) { this.hcache = d; await this.hflush(); }
   async rawSetMembers(m: Member[] | null) { if (m) await this.write(K.members, m); else await AsyncStorage.removeItem(K.members); }
 }

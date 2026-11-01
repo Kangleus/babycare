@@ -23,7 +23,7 @@ type Sub = null | 'profile' | 'login' | 'family' | 'join' | 'invite' | 'policy' 
 
 export default function Me() {
   const app = useApp();
-  const { p, baby, now, lvl, xp, xpMax, night, toggleNight, members, records, saveBaby, resetDemo, clearAll, showToast } = app;
+  const { p, baby, now, lvl, xp, xpMax, night, toggleNight, members, records, saveBaby, resetDemo, clearAll, showToast, goHealth, reminders } = app;
   const acc = useLvAcc();
   const [sub, setSub] = useState<Sub>(null);
   const [confirm, setConfirm] = useState<ConfirmOpts | null>(null);
@@ -64,6 +64,11 @@ export default function Me() {
             <Txt f="b8" size={11.5} color={p.sub}>再记 {xpMax - xp} 条{lvl < 5 ? `升到 Lv.${lvl + 1}` : ''} · 每记一条成长值 +1</Txt>
           </View>
         </View>
+
+        <List>
+          <Li testID="me-health" icon="medbook" iconBg={p.pink} t="健康档案" sub="体温 · 用药 · 就诊 · 疫苗体检" onPress={() => goHealth('top')} />
+          <Li testID="me-rem" icon="clock" iconBg={p.lilac} t="提醒事项" sub="用药 · 复诊 · 疫苗 · 体检" right={<Free t={`${reminders.length} 项待办`} bg={p.yellow} />} onPress={() => goHealth('rem')} last />
+        </List>
 
         <HGroup t="家庭成员" ok={linked && c.status === 'synced' ? '已同步' : undefined} mini={linked ? `${c.link!.familyName} · ${members.length} 人` : signedIn ? '登录后创建或加入家庭' : '登录后可邀请家人'} />
         <List>

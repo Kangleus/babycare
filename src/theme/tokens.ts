@@ -25,7 +25,7 @@ export const night: Palette = {
 
 /* 记录类型 → 卡片主色 / 浅底色（原型 body{--feed:var(--yellow)…}） */
 export type Kind = 'feed' | 'sleep' | 'diaper' | 'pee' | 'poop' | 'water' | 'med' | 'temp' | 'symptom' | 'growth' | 'bath';
-const KIND_KEYS: Record<Kind, [keyof Palette, keyof Palette]> = {
+export const KIND_KEYS: Record<Kind, [keyof Palette, keyof Palette]> = {
   feed: ['yellow', 'yellowS'], sleep: ['blue', 'blueS'], diaper: ['green', 'greenS'],
   pee: ['lime', 'limeS'], poop: ['caramel', 'caramelS'], water: ['aqua', 'aquaS'],
   med: ['lilac', 'lilacS'], temp: ['pink', 'pinkS'], symptom: ['coral', 'coralS'],

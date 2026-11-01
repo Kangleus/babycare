@@ -15,6 +15,7 @@ import { TrendSheet } from '@/components/trend';
 import { Onboarding } from '@/components/onboarding';
 import { usePathname } from 'expo-router';
 import { injectMascotCss } from '@/lib/mascot-css';
+import { RingBanner, RingWatcher } from '@/components/health/ring';
 
 injectMascotCss();
 
@@ -52,6 +53,8 @@ function Shell() {
         <StatusBarMock />
         {path === '/' ? <SamplesPop /> : null}
         <TabBar />
+        <RingWatcher />
+        <RingBanner />
         <RecordSheet />
         <TrendSheet />
         <Cele />

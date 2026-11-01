@@ -13,13 +13,14 @@ import { AppState, Platform } from 'react-native';
 import type { RealtimeChannel, Session } from '@supabase/supabase-js';
 import { cloudConfigured, supabase } from './supabase';
 import type { LocalRepo } from './local-repo';
-import type { Baby, BabyRecord, Member, RecordType } from './types';
+import type { Baby, BabyRecord, HealthData, HealthKind, Member, RecordType } from './types';
+import { HEALTH_KINDS } from './local-repo';
 import type { Kind } from '@/theme/tokens';
 
-export type CloudLink = { userId: string; familyId: string; familyName: string; babyId: string; displayName: string; role: 'admin' | 'member'; lastPull: string | null };
+export type CloudLink = { userId: string; familyId: string; familyName: string; babyId: string; displayName: string; role: 'admin' | 'member'; lastPull: string | null; hPull?: Partial<Record<HealthKind, string | null>> };
 export type CloudStatus = 'off' | 'signedOut' | 'noFamily' | 'syncing' | 'synced' | 'offline';
 export type CloudState = { status: CloudStatus; email: string | null; userId: string | null; link: CloudLink | null; pending: number; lastError: string | null };
-type Op = { k: 'rec'; id: string } | { k: 'baby' } | { k: 'cards' };
+type Op = { k: 'rec'; id: string } | { k: 'baby' } | { k: 'cards' } | { k: 'h'; t: HealthKind; id: string };
 type Row = { id: string; baby_id: string; family_id: string; type: RecordType; started_at: string; ended_at: string | null; vals: BabyRecord['values']; note: string | null; created_by_name: string; src: 'voice' | 'manual'; created_at: string; updated_at: string; deleted_at: string | null };
 type BabyRow = { id: string; family_id: string; name: string; birthday: string; gender: Baby['gender']; avatar: Baby['avatar']; feeding: Baby['feeding'] };
 
@@ -36,6 +37,25 @@ const fromRow = (r: Row): BabyRecord => ({
   values: r.vals ?? {}, note: r.note ?? undefined, createdBy: r.created_by_name, src: r.src, createdAt: r.created_at, updatedAt: r.updated_at,
 });
 const fromBabyRow = (b: BabyRow): Baby => ({ id: b.id, name: b.name, birthday: b.birthday, gender: b.gender, avatar: b.avatar, feeding: b.feeding });
+
+/* —— 健康数据：本地字段 ↔ 表字段 —— */
+type HRow = Record<string, unknown> & { id: string; baby_id: string; updated_at: string; deleted_at: string | null };
+const HMAP: Record<HealthKind, [string, string][]> = {
+  episodes: [['title', 'title'], ['startDate', 'start_date'], ['endDate', 'end_date'], ['status', 'status'], ['visits', 'visits'], ['note', 'note']],
+  allergies: [['name', 'name'], ['note', 'note']],
+  vaccines: [['name', 'name'], ['date', 'given_on'], ['note', 'note']],
+  reminders: [['cat', 'cat'], ['title', 'title'], ['dueAt', 'due_at'], ['repeat', 'repeat'], ['note', 'note'], ['source', 'source'], ['planKey', 'plan_key'], ['confirmed', 'confirmed'], ['doneAt', 'done_at'], ['doneBy', 'done_by_name']],
+};
+const hToRow = (t: HealthKind, x: Record<string, unknown>, familyId: string) => {
+  const o: Record<string, unknown> = { id: x.id, baby_id: x.babyId, family_id: familyId, created_by_name: x.createdBy, created_at: x.createdAt, deleted_at: null };
+  for (const [l, r] of HMAP[t]) o[r] = x[l] ?? null;
+  return o;
+};
+const hFromRow = (t: HealthKind, r: HRow) => {
+  const o: Record<string, unknown> = { id: r.id, babyId: r.baby_id, createdBy: r.created_by_name, createdAt: r.created_at, updatedAt: r.updated_at };
+  for (const [l, k] of HMAP[t]) o[l] = r[k] ?? (l === 'endDate' || l === 'doneAt' || l === 'doneBy' ? null : undefined);
+  return o;
+};
 
 /** PostgREST / Postgres 返回的是「请求本身有问题」（约束、权限）→ 重试也没用，丢掉这条；其余（断网）保留重试 */
 const permanent = (e: { code?: string } | null) => !!e?.code && (/^[0-9A-Z]{5}$/.test(e.code) || e.code.startsWith('PGRST'));
@@ -130,7 +150,15 @@ class CloudSync {
     const carried = carryLocal ? mine.map(r => ({ ...r, babyId })) : [];
     await repo.rawSetRecords(carried);
     ops.push(...carried.map(r => ({ k: 'rec' as const, id: r.id })));
-    this.link = { userId: uid, familyId, familyName, babyId, displayName, role, lastPull: null };
+    /* 健康数据同理：真实的（非演示）带过去，演示的丢掉 */
+    const h0 = await repo.rawHealth();
+    const h1 = { episodes: [], allergies: [], vaccines: [], reminders: [] } as HealthData;
+    if (carryLocal) for (const t of HEALTH_KINDS) {
+      (h1 as Record<HealthKind, unknown[]>)[t] = h0[t].filter(x => !isDemo(x.id)).map(x => ({ ...x, babyId }));
+      ops.push(...h1[t].map(x => ({ k: 'h' as const, t, id: x.id })));
+    }
+    await repo.rawSetHealth(h1);
+    this.link = { userId: uid, familyId, familyName, babyId, displayName, role, lastPull: null, hPull: {} };
     this.outbox = ops;
     await this.persist();
     this.set({ status: 'syncing', lastError: null });
@@ -142,8 +170,9 @@ class CloudSync {
     const link = this.link; if (!link) return;
     if (this.ch) { supabase.removeChannel(this.ch); this.ch = null; }
     this.ch = supabase.channel(`records:${link.babyId}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'records', filter: `baby_id=eq.${link.babyId}` }, p => { if (p.new && (p.new as Row).id) this.applyRows([p.new as Row]); })
-      .subscribe(s => { if (s === 'SUBSCRIBED') this.pull(); });
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'records', filter: `baby_id=eq.${link.babyId}` }, p => { if (p.new && (p.new as Row).id) this.applyRows([p.new as Row]); });
+    for (const t of HEALTH_KINDS) this.ch.on('postgres_changes', { event: '*', schema: 'public', table: t, filter: `baby_id=eq.${link.babyId}` }, p => { if (p.new && (p.new as HRow).id) this.applyHealth(t, [p.new as HRow]); });
+    this.ch.subscribe(s => { if (s === 'SUBSCRIBED') this.pull(); });
     this.kick();
   }
 
@@ -155,8 +184,8 @@ class CloudSync {
   /** SupabaseRepo 每次本地写入后调用 */
   enqueue(op: Op) {
     if (!this.link) return;
-    if (op.k === 'rec' && isDemo(op.id)) return;
-    const same = (o: Op) => o.k === op.k && (o.k !== 'rec' || (op.k === 'rec' && o.id === op.id));
+    if ((op.k === 'rec' || op.k === 'h') && isDemo(op.id)) return;
+    const same = (o: Op) => o.k === op.k && (o.k === 'rec' ? op.k === 'rec' && o.id === op.id : o.k === 'h' ? op.k === 'h' && o.t === op.t && o.id === op.id : true);
     this.outbox = [...this.outbox.filter(o => !same(o)), op];
     this.persist(); this.set({});
     this.flush();
@@ -191,6 +220,14 @@ class CloudSync {
           : await supabase.from('records').update({ deleted_at: new Date().toISOString() }).eq('id', op.id);
         return error;
       }
+      if (op.k === 'h') {
+        const x = (await repo.rawHealth())[op.t].find(y => y.id === op.id) as unknown as Record<string, unknown> | undefined;
+        if (x && x.babyId !== link.babyId) return null;
+        const { error } = x
+          ? await supabase.from(op.t).upsert(hToRow(op.t, x, link.familyId), { onConflict: 'id' })
+          : await supabase.from(op.t).update({ deleted_at: new Date().toISOString() }).eq('id', op.id);
+        return error;
+      }
       if (op.k === 'baby') {
         const b = await repo.getBaby(); if (!b || b.id !== link.babyId) return null;
         const { error } = await supabase.from('babies').upsert({ id: b.id, family_id: link.familyId, name: b.name, birthday: b.birthday, gender: b.gender, avatar: b.avatar, feeding: b.feeding }, { onConflict: 'id' });
@@ -221,6 +258,37 @@ class CloudSync {
     if (changed) { await repo.rawSetRecords(list); this.emit('data'); }
   }
 
+  private async applyHealth(t: HealthKind, rows: HRow[]) {
+    const link = this.link, repo = this.repo; if (!link || !repo || !rows.length) return;
+    const pend = new Set(this.outbox.flatMap(o => (o.k === 'h' && o.t === t ? [o.id] : [])));
+    const h = await repo.rawHealth(); const list = h[t] as unknown as Record<string, unknown>[];
+    let changed = false, maxU = link.hPull?.[t] ?? null;
+    for (const r of rows) {
+      if (!maxU || r.updated_at > maxU) maxU = r.updated_at;
+      if (r.baby_id !== link.babyId || pend.has(r.id)) continue;
+      const i = list.findIndex(x => x.id === r.id);
+      if (r.deleted_at) { if (i >= 0) { list.splice(i, 1); changed = true; } continue; }
+      const x = hFromRow(t, r);
+      if (i < 0) list.push(x); else list[i] = x;
+      changed = true;
+    }
+    if (this.link !== link) return;
+    link.hPull = { ...(link.hPull ?? {}), [t]: maxU }; await this.persist();
+    if (changed) { await repo.rawSetHealth(h); this.emit('data'); }
+  }
+
+  private async pullHealth(link: CloudLink) {
+    for (const t of HEALTH_KINDS) {
+      const since = link.hPull?.[t];
+      let q = supabase.from(t).select('*').eq('baby_id', link.babyId).order('updated_at').limit(1000);
+      q = since ? q.gt('updated_at', new Date(Date.parse(since) - 5000).toISOString()) : q.is('deleted_at', null);
+      const { data, error } = await q;
+      if (error) return error;
+      await this.applyHealth(t, (data ?? []) as HRow[]);
+    }
+    return null;
+  }
+
   async pull() {
     const link = this.link; if (!link) return;
     for (let page = 0; page < 50; page++) {
@@ -232,6 +300,8 @@ class CloudSync {
       await this.applyRows((data ?? []) as Row[]);
       if ((data ?? []).length < 1000) break;
     }
+    const he = await this.pullHealth(link);
+    if (he) { this.set({ status: 'offline', lastError: he.message }); this.later(() => this.kick()); return; }
     /* 宝宝资料和首页卡片（家人改了也跟着变） */
     const [{ data: b }, { data: cs }] = await Promise.all([
       supabase.from('babies').select('id, family_id, name, birthday, gender, avatar, feeding').eq('id', link.babyId).maybeSingle(),
