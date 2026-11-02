@@ -17,6 +17,7 @@ import { Onboarding } from '@/components/onboarding';
 import { usePathname } from 'expo-router';
 import { injectMascotCss } from '@/lib/mascot-css';
 import { RingBanner, RingWatcher } from '@/components/health/ring';
+import { SummarySheet } from '@/components/summary';
 
 injectMascotCss();
 
@@ -58,6 +59,7 @@ function Shell() {
         <RingBanner />
         <RecordSheet />
         <TrendSheet />
+        <SummarySheet />
         <VoiceLayer />
         <Cele />
         <NightTint />

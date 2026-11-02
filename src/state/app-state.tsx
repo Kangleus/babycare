@@ -41,6 +41,7 @@ type AppState = {
   clearAll: () => Promise<void>;
   recTarget: RecTarget; openRecord: (kind: Kind, rec?: BabyRecord) => void; closeRecord: () => void;
   trend: Kind | null; openTrend: (k: Kind | null) => void;
+  summaryOpen: boolean; openSummary: () => void; closeSummary: () => void;
   samplesOpen: boolean; setSamplesOpen: (b: boolean) => void;
 };
 const Ctx = createContext<AppState | null>(null);
@@ -57,6 +58,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [cele, setCele] = useState<Cele>(null);
   const [recTarget, setRecTarget] = useState<RecTarget>(null);
   const [trend, setTrend] = useState<Kind | null>(null);
+  const [summaryOpen, setSummaryOpen] = useState(false);
   const [samplesOpen, setSamplesOpen] = useState(false);
   const [health, setHealth] = useState<HealthData>(EMPTY_HEALTH);
   const [healthNav, setHealthNav] = useState<HealthNav>({ tab: 'ill', anchor: 'top', n: 0 });
@@ -145,7 +147,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     addRecord, updateRecord, deleteRecord, saveBaby, acceptConsent, finishOnboarding, resetDemo, clearAll,
     recTarget, openRecord: (kind, rec) => setRecTarget({ kind, rec }), closeRecord: () => setRecTarget(null),
     trend, openTrend: setTrend, samplesOpen, setSamplesOpen,
-  }), [samplesOpen, ready, settings, reminders, health, me, putHealth, deleteHealth, healthNav, goHealth, setHealthTab, dismissSugg, now, baby, records, events, members, toggleNight, save, toast, showToast, cele, addRecord, updateRecord, deleteRecord, saveBaby, acceptConsent, finishOnboarding, resetDemo, clearAll, recTarget, trend]);
+    summaryOpen, openSummary: () => setSummaryOpen(true), closeSummary: () => setSummaryOpen(false),
+  }), [summaryOpen, samplesOpen, ready, settings, reminders, health, me, putHealth, deleteHealth, healthNav, goHealth, setHealthTab, dismissSugg, now, baby, records, events, members, toggleNight, save, toast, showToast, cele, addRecord, updateRecord, deleteRecord, saveBaby, acceptConsent, finishOnboarding, resetDemo, clearAll, recTarget, trend]);
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 export const useApp = () => { const c = useContext(Ctx); if (!c) throw new Error('AppStateProvider missing'); return c; };
