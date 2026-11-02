@@ -1,7 +1,10 @@
 import asyncio
 from playwright.async_api import async_playwright
 from PIL import Image, ImageChops
-OUT='/workspace/yijuji-app/shots/'
+import paths
+BASE = paths.BASE_URL
+PROTO = paths.require_proto()
+OUT = paths.O
 def side(a,b,o):
   A=Image.open(OUT+a).convert('RGB');B=Image.open(OUT+b).convert('RGB')
   c=Image.new('RGB',(A.width*2+20,A.height),'white');c.paste(A,(0,0));c.paste(B,(A.width+20,0));c.save(OUT+o)
@@ -9,11 +12,11 @@ def side(a,b,o):
   print(o,'differing px (>40):',px,f'{px/(A.width*A.height)*100:.2f}%')
 async def main():
   async with async_playwright() as p:
-    b=await p.chromium.launch(executable_path='/usr/bin/google-chrome',args=['--no-sandbox'])
+    b=await p.chromium.launch(executable_path=paths.CHROME,args=['--no-sandbox'])
     ctx=await b.new_context(viewport={'width':390,'height':844},device_scale_factor=2)
-    a=await ctx.new_page();await a.goto('file:///workspace/yijuji-prototype/index.html');await a.wait_for_function('window.__ready');await a.wait_for_timeout(1800)
+    a=await ctx.new_page();await a.goto(PROTO);await a.wait_for_function('window.__ready');await a.wait_for_timeout(1800)
     r=await ctx.new_page();errs=[];r.on('pageerror',lambda e:errs.append(str(e)))
-    await r.goto('http://localhost:8090/');await r.wait_for_timeout(4000)
+    await r.goto(BASE+'/');await r.wait_for_timeout(4000)
     FZ='*,*:before,*:after{animation:none!important;transition:none!important}'
     await a.add_style_tag(content=FZ);await r.add_style_tag(content=FZ);await a.wait_for_timeout(300)
     await a.screenshot(path=OUT+'proto-home.png');await r.screenshot(path=OUT+'rn-home.png');side('proto-home.png','rn-home.png','compare-home.png')

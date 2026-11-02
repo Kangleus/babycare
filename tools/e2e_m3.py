@@ -3,13 +3,16 @@
 2) 按住团子（Chrome 假麦克风）：听写浮层、上滑取消、短按提示、松手 → 整理中 → 未登录时转打字
 3) 登录测试账号 A 后：按住说话 → 线上 Edge Function voice-parse（百炼 key 未配置时 503）→ 转打字；打字 → 云端不可用时本地兜底
 4) 和原型确认卡并排截图（shots/m3/cmp-*.png）
-跑法：npm run build:web && npm run serve:web；/workspace/.venv-proto/bin/python tools/e2e_m3.py"""
+跑法：npm run serve:web 之后 .venv/bin/python tools/e2e_m3.py（需要 .env.test 与真实测试账号）"""
 import asyncio, datetime, re
 from playwright.async_api import async_playwright
 from PIL import Image, ImageDraw, ImageFont
-O='/workspace/yijuji-app/shots/m3/'
+import paths
+BASE = paths.BASE_URL
+PROTO = paths.require_proto()
+O = paths.sub('m3')
 import os; os.makedirs(O,exist_ok=True)
-env=dict(l.split('=',1) for l in open('/workspace/yijuji-app/.env.test').read().split('\n') if '=' in l)
+env=dict(l.split('=',1) for l in open(str(paths.ENV_TEST)).read().split('\n') if '=' in l)
 ok=[];bad=[]
 def check(name,cond,info=''):
   (ok if cond else bad).append(name); print(('PASS ' if cond else 'FAIL ')+name+(' — '+str(info) if info and not cond else ''))
@@ -22,11 +25,11 @@ NOW=datetime.datetime(2026,11,1,18,10,0)
 
 async def main():
   async with async_playwright() as pw:
-    b=await pw.chromium.launch(executable_path='/usr/bin/google-chrome',args=['--no-sandbox','--use-fake-ui-for-media-stream','--use-fake-device-for-media-stream','--use-file-for-fake-audio-capture=/workspace/yijuji-app/tools/voice/fake-mic.wav'])
+    b=await pw.chromium.launch(executable_path=paths.CHROME,args=['--no-sandbox','--use-fake-ui-for-media-stream','--use-fake-device-for-media-stream',f"--use-file-for-fake-audio-capture={paths.ROOT / 'tools/voice/fake-mic.wav'}"])
     ctx=await b.new_context(viewport={'width':390,'height':844},device_scale_factor=2,timezone_id='Asia/Shanghai',permissions=['microphone'])
     # ---------- 原型：同样几句话的确认卡 ----------
     a=await ctx.new_page(); await a.clock.set_system_time(NOW)
-    await a.goto('file:///workspace/yijuji-prototype/index.html'); await a.wait_for_function('window.__ready'); await a.wait_for_timeout(1500)
+    await a.goto(PROTO); await a.wait_for_function('window.__ready'); await a.wait_for_timeout(1500)
     async def proto(i,name):
       await a.evaluate(f'()=>{{window.__noAutosave=true;openConfirm(parse(SAMPLES[{i}].text))}}'); await a.wait_for_timeout(900); await a.screenshot(path=O+name)
       await a.evaluate("()=>{const b=[...document.querySelectorAll('.sheet button')].find(x=>/撤销|算了/.test(x.textContent));b&&b.click()}"); await a.wait_for_timeout(700)
@@ -44,7 +47,7 @@ async def main():
     async def shot(p,w=450): await r.wait_for_timeout(w); await r.screenshot(path=O+p)
     async def body(): return await r.locator('body').inner_text()
     async def count(): return int(re.match(r'(\d+)',(await T('tl-count').inner_text()).strip()).group(1))
-    await r.goto('http://localhost:8090/'); await r.wait_for_timeout(2500)
+    await r.goto(BASE+'/'); await r.wait_for_timeout(2500)
     await T('ob-agree').click(); await T('ob-continue').click(); await r.wait_for_timeout(600)
     await T('pf-name').fill('豆米'); await T('pf-bd').fill('2026-03-28'); await T('pf-gender-girl').click(); await T('pf-submit').click(); await r.wait_for_timeout(2500)
     async def typed(text, open_from='samples'):

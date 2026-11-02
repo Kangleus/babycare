@@ -1,9 +1,13 @@
 """团子育儿本 M4 健康 Tab 端到端（本地 / 未登录）：390x844，时钟从 2026-10-31 10:20 起。
-跑法：python3 -m http.server 8090 -d dist &  然后  /workspace/.venv-proto/bin/python tools/e2e_m4.py"""
+跑法：npm run test:web（会自动构建 + 起服务 + 收尾），或先 npm run serve:web 再
+     .venv/bin/python tools/e2e_m4.py"""
 import asyncio, datetime, json, re, sys
 from playwright.async_api import async_playwright
 from PIL import Image, ImageChops
-O='/workspace/yijuji-app/shots/m4/'
+import paths
+O = paths.sub('m4')
+BASE = paths.BASE_URL
+PROTO = paths.require_proto()
 FZ='*,*:before,*:after{animation:none!important;transition:none!important}'
 ok=[];bad=[]
 def check(name,cond,info=''):
@@ -12,13 +16,14 @@ def side(a,b,o):
   A=Image.open(O+a).convert('RGB');B=Image.open(O+b).convert('RGB')
   c=Image.new('RGB',(A.width*2+20,max(A.height,B.height)),'white');c.paste(A,(0,0));c.paste(B,(A.width+20,0));c.save(O+o)
   d=ImageChops.difference(A,B.resize(A.size)).convert('L');px=sum(1 for v in d.getdata() if v>40)
-  print(o,'differing px (>40):',f'{px/(A.width*A.height)*100:.2f}%')
+  pct=px/(A.width*A.height)*100
+  if paths.visual_report(o,pct): bad.append('visual '+o)
 
 async def main():
   async with async_playwright() as pw:
-    b=await pw.chromium.launch(executable_path='/usr/bin/google-chrome',args=['--no-sandbox'])
+    b=await pw.chromium.launch(executable_path=paths.CHROME,args=['--no-sandbox'])
     ctx=await b.new_context(viewport={'width':390,'height':844},device_scale_factor=2,accept_downloads=True)
-    await ctx.grant_permissions(['clipboard-read','clipboard-write'],origin='http://localhost:8090')
+    await ctx.grant_permissions(['clipboard-read','clipboard-write'],origin=BASE)
     r=await ctx.new_page();errs=[]
     r.on('pageerror',lambda e:errs.append('PAGEERR '+str(e)))
     r.on('console',lambda m:errs.append('CONSOLE '+m.text) if m.type=='error' else None)
@@ -34,7 +39,7 @@ async def main():
     def in_view(bb): return bb and 0<=bb['y']<844
 
     # ---------- onboarding (demo data) ----------
-    await r.goto('http://localhost:8090/'); await r.wait_for_timeout(2500)
+    await r.goto(BASE+'/'); await r.wait_for_timeout(2500)
     await T('ob-agree').click(); await T('ob-continue').click(); await r.wait_for_timeout(600)
     await T('pf-name').fill('豆米'); await T('pf-bd').fill('2026-03-28'); await T('pf-gender-girl').click(); await T('pf-submit').click(); await r.wait_for_timeout(2200)
 
@@ -49,7 +54,7 @@ async def main():
     # ---------- 2. side-by-side with prototype ----------
     await r.evaluate("document.querySelectorAll('[data-testid=sugg]')[0]")  # noop
     await r.mouse.move(195,500); await r.mouse.wheel(0,-6000); await r.wait_for_timeout(600)
-    a=await ctx.new_page(); await a.goto('file:///workspace/yijuji-prototype/index.html'); await a.wait_for_function('window.__ready'); await a.wait_for_timeout(1500)
+    a=await ctx.new_page(); await a.goto(PROTO); await a.wait_for_function('window.__ready'); await a.wait_for_timeout(1500)
     await a.evaluate("go('health')"); await a.wait_for_timeout(900)
     await a.add_style_tag(content=FZ); await r.add_style_tag(content=FZ); await a.wait_for_timeout(300)
     await a.screenshot(path=O+'proto-health.png'); await r.screenshot(path=O+'rn-health.png'); side('proto-health.png','rn-health.png','compare-health.png')
@@ -204,7 +209,7 @@ async def main():
     check('提醒事项 → 健康 提醒 section in view', in_view(await T('rem-card').bounding_box()))
 
     # ---------- 12. reload persists ----------
-    await r.goto('http://localhost:8090/'); await r.wait_for_timeout(3000); await tab('健康')
+    await r.goto(BASE+'/'); await r.wait_for_timeout(3000); await tab('健康')
     t=await body()
     check('reload: reminders / allergy / dismissed suggestion persisted', '喂益生菌' in t and '鸡蛋' in t and await T('sg-nofever').count()==0)
     await r.mouse.wheel(0,-9000); await shot('16-health-top-after.png')

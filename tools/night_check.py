@@ -2,30 +2,34 @@
 import asyncio, datetime, sys, statistics
 from playwright.async_api import async_playwright
 from PIL import Image, ImageChops
-O='/workspace/yijuji-app/shots/m2/'
+import paths
+O = paths.sub('m2')
+BASE = paths.BASE_URL
+PROTO = paths.require_proto()
 FZ='*,*:before,*:after{animation:none!important;transition:none!important}'
 STARS="()=>[...document.querySelectorAll(SEL)].map(e=>{const b=e.getBoundingClientRect();return [b.x+b.width/2,b.y+b.height/2,b.width,+getComputedStyle(e).opacity]})"
 async def onboard(r):
   T=r.get_by_test_id
-  await r.goto('http://localhost:8090/'); await r.wait_for_timeout(2500)
+  await r.goto(BASE+'/'); await r.wait_for_timeout(2500)
   await T('ob-agree').click(); await T('ob-continue').click(); await r.wait_for_timeout(500); await T('pf-submit').click(); await r.wait_for_timeout(2500)
 async def main():
   ok=True
   async with async_playwright() as pw:
-    b=await pw.chromium.launch(executable_path='/usr/bin/google-chrome',args=['--no-sandbox'])
+    b=await pw.chromium.launch(executable_path=paths.CHROME,args=['--no-sandbox'])
     # 1) 静态对比：两边星星都停在 opacity .55（RN 用系统「减少动态效果」，原型用注入样式）
     ctx=await b.new_context(viewport={'width':390,'height':844},device_scale_factor=2,reduced_motion='reduce')
     r=await ctx.new_page(); errs=[]; r.on('pageerror',lambda e:errs.append(str(e)))
     await r.clock.set_system_time(datetime.datetime(2026,10,31,10,20,0)); await onboard(r)
     await r.get_by_label('夜间模式').first.click(); await r.wait_for_timeout(3500)
-    a=await ctx.new_page(); await a.goto('file:///workspace/yijuji-prototype/index.html'); await a.wait_for_function('window.__ready'); await a.wait_for_timeout(800)
+    a=await ctx.new_page(); await a.goto(PROTO); await a.wait_for_function('window.__ready'); await a.wait_for_timeout(800)
     await a.evaluate('toggleNight()'); await a.wait_for_timeout(3500)
     await a.add_style_tag(content=FZ+'.night-stars{opacity:1!important}.night-stars i{opacity:.55!important}'); await r.add_style_tag(content=FZ)
     await a.wait_for_timeout(300); await r.wait_for_timeout(300)
     await a.screenshot(path=O+'proto-night-home.png'); await r.screenshot(path=O+'rn-night-home.png')
     A=Image.open(O+'proto-night-home.png').convert('RGB');B=Image.open(O+'rn-night-home.png').convert('RGB')
     c=Image.new('RGB',(A.width*2+20,A.height),'white');c.paste(A,(0,0));c.paste(B,(A.width+20,0));c.save(O+'compare-night-home.png')
-    d=ImageChops.difference(A,B).convert('L'); px=sum(1 for v in d.get_flattened_data() if v>40); print('compare-night-home differing px: %.2f%%'%(px/(A.width*A.height)*100))
+    d=ImageChops.difference(A,B).convert('L'); px=sum(1 for v in d.get_flattened_data() if v>40); pct=px/(A.width*A.height)*100
+    if paths.visual_report('compare-night-home.png',pct): ok=False
     ps=await a.evaluate(STARS.replace('SEL',"'.night-stars i'")); rs=await r.evaluate(STARS.replace('SEL',"'[data-testid=night-stars] > div'"))
     print('stars proto',len(ps),'rn',len(rs))
     perr=max(max(abs(p[0]-q[0]),abs(p[1]-q[1]),abs(p[2]-q[2])) for p,q in zip(ps,rs)) if len(ps)==len(rs)==22 else 99
