@@ -52,15 +52,20 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "expo lint",
+    "typecheck": "tsc --noEmit",
     "build:web": "expo export --platform web",
     "serve:web": "python3 -m http.server 8090 -d dist",
-    "e2e": "/workspace/.venv-proto/bin/python tools/e2e.py",
-    "check:mascot": "/workspace/.venv-proto/bin/python tools/mascot_check.py",
-    "check:night": "/workspace/.venv-proto/bin/python tools/night_check.py",
+    "setup:test": "bash scripts/setup-test.sh",
+    "test:web": "python3 tools/run_web_tests.py",
+    "e2e": ".venv/bin/python tools/e2e.py",
+    "check:mascot": ".venv/bin/python tools/mascot_check.py",
+    "check:night": ".venv/bin/python tools/night_check.py",
     "export:native": "expo export --platform ios --platform android --output-dir /tmp/native-export",
     "test:cloud": "node tools/cloud_it.mjs",
-    "test:cloud-ui": "/workspace/.venv-proto/bin/python tools/cloud_ui.py",
-    "e2e:m4": "/workspace/.venv-proto/bin/python tools/e2e_m4.py"
+    "test:cloud-ui": ".venv/bin/python tools/cloud_ui.py",
+    "e2e:m4": ".venv/bin/python tools/e2e_m4.py",
+    "check:secrets": "bash tools/check-secrets.sh",
+    "backup:db": "bash tools/backup-db.sh"
   },
   "private": true
 }
