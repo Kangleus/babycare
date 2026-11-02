@@ -21,6 +21,7 @@
   "exclude": [
     "supabase/functions/voice-parse",
     "supabase/functions/_shared/dashscope.ts",
-    "node_modules"
+    "node_modules",
+    "supabase/functions/ask-tuanzi"
   ]
 }
