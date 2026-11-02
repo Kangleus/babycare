@@ -87,7 +87,7 @@ export function systemPrompt(o: {
 【你怎么回答】
 1. 先查再答：凡是问到${baby.name}自己的情况（吃、睡、尿布、体温、用药记录、夜醒、成长、疫苗、提醒），必须先调用工具拿数据，不许凭印象说。
 2. 数字只能来自工具结果。工具没给的数字不许写；记录里没有就直说「记录里没有这段时间的数据」，不要猜，不要补。
-3. 回答里点明依据，例如「根据过去 7 天的记录」「昨晚的 5 条记录」。
+3. 必须点明依据：body 的第一句就要写清来源，并且**一定出现「记录」两个字**，句式照这两个抄：「根据过去 7 天的记录，……」或「根据昨晚的 5 条记录，……」。不要只写「过去 7 天平均」这种没有「记录」的说法。
 4. 比较只和${baby.name}自己的历史比。可以提一句常见月龄参考范围，但要说「每个宝宝不同」。
 5. 最后必须调用 reply 结束：concl 一句话结论（≤24 字），body 正文（≤220 字，可以用 **加粗** 标数字），需要时用 chart 引用 get_stats 的 call_id、用 events 引用 query_events 的 call_id。
 6. 最多查 3 次就要回答。
@@ -354,10 +354,19 @@ export async function runAgent(o: {
     const m = res.message;
     const tcs = m?.tool_calls ?? [];
     if (!tcs.length) {
-      // 没调 reply 就给了纯文本：第一句当结论，其余当正文
+      /* 模型偶尔不调 reply、直接吐纯文本。两种形态都要认：
+         - 「一句话。后面是正文」
+         - 自己写了标签：concl: … body: …（实测会这样，标签不能当正文） */
       const text = (m?.content ?? '').trim();
       if (!text) continue;
-      const [first, ...rest] = text.split(/(?<=[。！？!?])/);
+      // 标签可能带冒号也可能不带（实测「concl 他最近… body 豆米近 7 天…」），冒号可选
+      const cm = /(?:^|[\n。])\s*concl\s*[:：]?\s*([^\n]+)/i.exec(text);
+      const bm = /(?:^|[\n。])\s*body\s*[:：]?\s*([\s\S]+)$/i.exec(text);
+      if (cm && bm) {
+        const body = bm[1].replace(/^\s*(?:concl|body)\s*[:：]?\s*/gi, '').trim();
+        return { reply: { concl: cm[1].trim().replace(/[。！？!?]$/, '').slice(0, 40), body: body.slice(0, 400) }, calls, rounds: round };
+      }
+      const [first, ...rest] = text.replace(/^\s*concl\s*[:：]?/i, '').split(/(?<=[。！？!?])/);
       return { reply: { concl: first.replace(/[。！？!?]$/, '').slice(0, 24), body: rest.join('').slice(0, 220) }, calls, rounds: round };
     }
 
@@ -519,6 +528,13 @@ export async function answerQuestion(o: {
       range: ([1, 3, 7].includes(Number(actionCall.result.range)) ? Number(actionCall.result.range) : 3) as 1 | 3 | 7,
     }
     : undefined;
+
+  /* 问到药 / 剂量时，由代码保证出现「听医生或药师」这句固定话术（§5 明确要求），
+     不指望模型每次都写出来 —— 这是安全声明，不是内容创作。 */
+  const asksDose = /药|剂量|药量|毫升|毫克|几包|几袋|几片|几粒|隔.{0,4}小时/.test(o.question);
+  if (asksDose && !/医生|药师/.test(`${concl}${body}`)) {
+    body = `${body}${body.endsWith('。') ? '' : '。'}用药和剂量要听医生或药师的，团团不提供。`.slice(0, 400);
+  }
 
   const cites = buildCites(run.calls.map(c => ({ fn: c.fn, result: c.result as Record<string, unknown> })), tier);
   if (tier === 'life' && run.calls.length === 0) cites.push('通用育儿常识');
