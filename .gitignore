@@ -32,6 +32,19 @@ yarn-error.*
 
 # local env files
 .env*.local
+.env
+.env.*
+!.env.example
+
+# 测试环境（python venv）
+.venv/
+
+# python 缓存
+__pycache__/
+*.pyc
+
+# 数据库导出（含宝宝真实数据，绝不进仓库）
+backups/
 
 # typescript
 *.tsbuildinfo
@@ -41,4 +54,3 @@ example
 # generated native folders
 /ios
 /android
-.env.test
