@@ -26,7 +26,10 @@
   1. 阿里云账号欠费（Arrearage），需康乐充值；
   2. Supabase Dashboard → Baby → Edge Functions → Secrets 还没加 `DASHSCOPE_API_KEY`（需康乐手动加）。
   加好后跑 `node tools/voice/eval.mjs text` 和 `audio` 测真实准确率（本地规则：30/30，新说法 12/15）。
-- ⬜ M5 问团子 AI 问答 + 一键摘要（日/周/就医摘要）：未开始。方案见技术规划页（下方链接）：新建 Edge Function，取最近 N 天自家记录汇总进上下文（暂不需要向量库），qwen-plus 回答，DeepSeek 备用；遵守医疗安全规则；每户每日次数上限。
+- 🟡 M5 拆成两步，第一步已完成：
+  - ✅ **一键摘要**（`src/lib/summary.ts` + `src/components/summary.tsx`）：给医生 / 给奶奶两版，近 1/3/7 天；入口在「问团子」页右上角和「我的」页。**纯模板生成，不调用 AI**——数字全由代码算，句子按模板拼。便签可换一种 / 存图片 / 分享文字。原型的「只读分享链接」「想问医生的问题」「夜醒变化检测」按 docs/NEXT-PLAN.md 的 D2/D4 推迟，没做。
+  - ⬜ **问团子 AI 问答**：未开始。新建 Edge Function，取最近 N 天自家记录汇总进上下文（暂不需要向量库），qwen-plus 回答，DeepSeek 备用；遵守医疗安全规则；每户每日次数上限（`ai_usage` 表的 `kind='ask'` 已就绪）。方案见技术规划页（下方链接）。
+- 一键摘要的测试：`tools/e2e_m5.py`（24 项，含用 localStorage 记录**独立重算**便签数字）。选择屏与原型像素对比当前约 2.4%（字体渲染级，首页同水平）。
 - ⬜ M6 打包：安卓 APK、iOS TestFlight（需苹果开发者账号 688 元/年）、真机测录音（iOS 录 WAV、Android 录 AAC，只过了类型检查）。
 - 已知缺口：忘记密码、移除成员/转让管理员、冲突编辑是后写覆盖、网页提醒只在页面打开时触发。
 - 上架合规（暂缓）：数据迁国内云、ICP/App 备案、软著、生成式 AI 相关登记（个人主体能否办待确认）、商标（第 9/42 类未查）。
