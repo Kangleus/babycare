@@ -217,8 +217,13 @@ async def main():
 
     # ---------- 6. reload persists ----------
     before=await count(); cards_before=[await r.locator('[data-testid^="card-"][data-testid$="-v"]').nth(i).get_attribute('data-testid') for i in range(6)]
-    await r.reload(); await r.wait_for_timeout(3000)
-    check('reload: still onboarded', await T('tl-count').is_visible())
+    # CI 的 runner 没有缓存，冷启动比本机慢（实测 3 秒不够）。这里等元素出现而不是睡固定时长：
+    # 状态真丢了的话 20 秒也等不到，用例照样失败，只是失败得更慢。
+    await r.reload()
+    try:
+      await T('tl-count').wait_for(state='visible', timeout=20000); still_onboarded=True
+    except Exception: still_onboarded=False
+    check('reload: still onboarded', still_onboarded)
     after=await count(); cards_after=[await r.locator('[data-testid^="card-"][data-testid$="-v"]').nth(i).get_attribute('data-testid') for i in range(6)]
     check('reload: records persisted', before==after, (before,after))
     check('reload: card selection persisted', cards_before==cards_after, cards_after)
