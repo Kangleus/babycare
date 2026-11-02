@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CI: '1'
+  EXPO_NO_TELEMETRY: '1'
+
+jobs:
+  static:
+    name: 类型检查 + Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: TypeScript（tsc --noEmit）
+        run: npx tsc --noEmit
+      - name: ESLint（expo lint）
+        run: npx expo lint
+
+  web-e2e:
+    name: 网页版验收测试
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: 安装 Node 依赖
+        run: npm ci
+
+      - name: 构建网页版
+        run: npx expo export --platform web --output-dir dist
+
+      - name: 安装测试依赖
+        run: |
+          python -m venv .venv
+          .venv/bin/pip install --quiet -r tools/test-requirements.txt
+          .venv/bin/python -m playwright install --with-deps chromium
+
+      - name: 跑测试（e2e / e2e:m4 / mascot / night）
+        env:
+          E2E_SHOTS_DIR: ${{ runner.temp }}/shots
+        run: python3 tools/run_web_tests.py --no-build
+
+      - name: 留存截图与对比图
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: shots
+          path: ${{ runner.temp }}/shots
+          if-no-files-found: ignore
+
+# 说明：
+# - 云端相关测试（npm run test:cloud / test:cloud-ui）和 e2e:m3 需要真实 Supabase 账号与
+#   AI 密钥，不进 CI，避免在线上项目里写测试数据。
+# - 网页版测试的截图写到 runner 临时目录，避免 CI 里产生已被 git 跟踪的 PNG 改动。
+# - 视觉差异不会静默：超阈值的对比图会出现在日志的「汇总」段，并随 artifact 上传。
