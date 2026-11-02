@@ -46,6 +46,9 @@ __pycache__/
 # 数据库导出（含宝宝真实数据，绝不进仓库）
 backups/
 
+# 测试每次运行都会重新生成的差异图
+shots/**/*-diff.png
+
 # typescript
 *.tsbuildinfo
 
