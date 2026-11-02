@@ -22,13 +22,14 @@ ROOT = Path(__file__).resolve().parent.parent
 TOOLS = ROOT / 'tools'
 DIST = ROOT / 'dist'
 
-DEFAULT_TESTS = ['e2e.py', 'e2e_m4.py', 'mascot_check.py', 'night_check.py']
+DEFAULT_TESTS = ['e2e.py', 'e2e_m4.py', 'e2e_m5.py', 'mascot_check.py', 'night_check.py']
 DEFAULT_PORT = 8090
 
 # 中文说明，汇总时更好读
 LABELS = {
     'e2e.py': 'M1/M2 主流程 + 趋势 + 原型对比',
     'e2e_m4.py': 'M4 健康 tab',
+    'e2e_m5.py': 'M5 一键摘要（给医生 / 给奶奶）',
     'mascot_check.py': '团团动画：Web 实现 vs 原生实现',
     'night_check.py': '夜间模式星星',
 }
