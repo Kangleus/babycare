@@ -66,7 +66,8 @@
     "e2e:m4": ".venv/bin/python tools/e2e_m4.py",
     "check:secrets": "bash tools/check-secrets.sh",
     "backup:db": "bash tools/backup-db.sh",
-    "e2e:m5": ".venv/bin/python tools/e2e_m5.py"
+    "e2e:m5": ".venv/bin/python tools/e2e_m5.py",
+    "e2e:ask": ".venv/bin/python tools/e2e_ask.py"
   },
   "private": true
 }
