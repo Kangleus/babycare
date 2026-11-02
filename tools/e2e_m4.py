@@ -44,8 +44,12 @@ async def main():
     await T('pf-name').fill('豆米'); await T('pf-bd').fill('2026-03-28'); await T('pf-gender-girl').click(); await T('pf-submit').click(); await r.wait_for_timeout(2200)
 
     # ---------- 1. home 体温卡片 → 健康 · 病程记录 ----------
-    await T('card-temp').click(); await r.wait_for_timeout(1200)
-    check('home temp card → 健康 tab', await T('ill-tab').count()==1 and await T('sugg').count()==1)
+    # CI 的 runner 比本机慢，固定 1.2 秒偶尔不够；改成等元素出现（真跳不过去照样失败，只是慢一点）
+    await T('card-temp').click()
+    try:
+      await T('ill-tab').wait_for(state='visible', timeout=20000); nav_ok=True
+    except Exception: nav_ok=False
+    check('home temp card → 健康 tab', nav_ok and await T('ill-tab').count()==1 and await T('sugg').count()==1)
     check('jumped to 病程记录 section (segbig in view)', in_view(await T('ht-ill').bounding_box()), await T('ht-ill').bounding_box())
     await shot('01-from-home-temp.png')
     await tab('今天'); await T('card-med').click(); await r.wait_for_timeout(1000)
