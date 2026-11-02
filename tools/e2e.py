@@ -221,8 +221,13 @@ async def main():
     # 状态真丢了的话 20 秒也等不到，用例照样失败，只是失败得更慢。
     await r.reload()
     try:
-      await T('tl-count').wait_for(state='visible', timeout=20000); still_onboarded=True
-    except Exception: still_onboarded=False
+      await T('tl-count').wait_for(state='visible', timeout=60000); still_onboarded=True
+    except Exception:
+      still_onboarded=False
+      print('  [diag] reload 后 60s 内 tl-count 仍不可见')
+      print('  [diag] body:', (await r.locator('body').inner_text())[:200].replace(chr(10),' | '))
+      print('  [diag] ob-consent visible:', await T('ob-consent').is_visible())
+      print('  [diag] tl-count 存在:', await T('tl-count').count())
     check('reload: still onboarded', still_onboarded)
     after=await count(); cards_after=[await r.locator('[data-testid^="card-"][data-testid$="-v"]').nth(i).get_attribute('data-testid') for i in range(6)]
     check('reload: records persisted', before==after, (before,after))
