@@ -1,9 +1,13 @@
 """团子育儿本 M1/M2 端到端测试：390x844，时钟固定从 2026-10-31 10:20 起走。
-跑法：python3 -m http.server 8090 -d dist &  然后  /workspace/.venv-proto/bin/python tools/e2e.py"""
+跑法：npm run test:web（会自动构建 + 起服务 + 收尾），或先 npm run serve:web 再
+     .venv/bin/python tools/e2e.py"""
 import asyncio, datetime, re, sys
 from playwright.async_api import async_playwright
 from PIL import Image, ImageChops
-O='/workspace/yijuji-app/shots/'
+import paths
+O = paths.O
+BASE = paths.BASE_URL
+PROTO = paths.require_proto()
 FZ='*,*:before,*:after{animation:none!important;transition:none!important}'
 ok=[];bad=[]
 def check(name,cond,info=''):
@@ -12,7 +16,8 @@ def side(a,b,o):
   A=Image.open(O+a).convert('RGB');B=Image.open(O+b).convert('RGB')
   c=Image.new('RGB',(A.width*2+20,max(A.height,B.height)),'white');c.paste(A,(0,0));c.paste(B,(A.width+20,0));c.save(O+o)
   d=ImageChops.difference(A,B.resize(A.size)).convert('L');px=sum(1 for v in d.getdata() if v>40)
-  print(o,'differing px (>40):',f'{px/(A.width*A.height)*100:.2f}%')
+  pct=px/(A.width*A.height)*100
+  if paths.visual_report(o,pct): bad.append('visual '+o)
 
 async def expected_avg(r,k,rng):
   """独立重算：范围内完整的天（不含今天），起点 = 这一类最早记录 / 同意协议 取早者；无记录的天按 0（体温只算有记录的天）"""
@@ -53,7 +58,7 @@ def fmt_avg(k,v):
   return str(round(v))
 async def main():
   async with async_playwright() as pw:
-    b=await pw.chromium.launch(executable_path='/usr/bin/google-chrome',args=['--no-sandbox'])
+    b=await pw.chromium.launch(executable_path=paths.CHROME,args=['--no-sandbox'])
     ctx=await b.new_context(viewport={'width':390,'height':844},device_scale_factor=2)
     r=await ctx.new_page();errs=[]
     r.on('pageerror',lambda e:errs.append('PAGEERR '+str(e)))
@@ -67,7 +72,7 @@ async def main():
       await r.get_by_text('今天',exact=True).last.click(); await r.wait_for_timeout(500)
 
     # ---------- 1. onboarding ----------
-    await r.goto('http://localhost:8090/'); await r.wait_for_timeout(3000)
+    await r.goto(BASE+'/'); await r.wait_for_timeout(3000)
     check('onboarding: consent page shown on first run', await T('ob-consent').is_visible())
     await shot('m2/01-onboarding-consent.png')
     check('consent: continue disabled until checked', await T('ob-continue').get_attribute('aria-disabled')=='true')
@@ -82,7 +87,7 @@ async def main():
     check('age line computed from birthday', '7 个月 3 天' in await r.locator('body').inner_text())
     await shot('m1/01-home.png')
     # compare with prototype
-    a=await ctx.new_page(); await a.goto('file:///workspace/yijuji-prototype/index.html'); await a.wait_for_function('window.__ready'); await a.wait_for_timeout(1800)
+    a=await ctx.new_page(); await a.goto(PROTO); await a.wait_for_function('window.__ready'); await a.wait_for_timeout(1800)
     await a.add_style_tag(content=FZ); await r.add_style_tag(content=FZ); await a.wait_for_timeout(300)
     await a.screenshot(path=O+'m1/proto-home.png'); await r.screenshot(path=O+'m1/rn-home.png'); side('m1/proto-home.png','m1/rn-home.png','m1/compare-home.png')
     # scrolled compare (the overlap zone)

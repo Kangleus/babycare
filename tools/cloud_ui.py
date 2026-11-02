@@ -4,8 +4,11 @@ B 新记一条→A 的首页几秒内出现「爸爸记」；C 登录后看不�
 import asyncio, time, re
 from playwright.async_api import async_playwright
 from PIL import Image
-O='/workspace/yijuji-app/shots/m2-cloud/'
-env=dict(l.split('=',1) for l in open('/workspace/yijuji-app/.env.test').read().split('\n') if l)
+import paths
+BASE = paths.BASE_URL
+PROTO = paths.require_proto()
+O = paths.sub('m2-cloud')
+env=dict(l.split('=',1) for l in open(str(paths.ENV_TEST)).read().split('\n') if l)
 ok=[];bad=[]
 def check(name,cond,info=''):
   (ok if cond else bad).append(name); print(('PASS ' if cond else 'FAIL ')+name+(' — '+str(info) if info else ''))
@@ -20,7 +23,7 @@ def side(a,b,o,labels=None):
 
 async def main():
   async with async_playwright() as pw:
-    br=await pw.chromium.launch(executable_path='/usr/bin/google-chrome',args=['--no-sandbox'])
+    br=await pw.chromium.launch(executable_path=paths.CHROME,args=['--no-sandbox'])
     async def user(tag):
       ctx=await br.new_context(viewport={'width':390,'height':844},device_scale_factor=2)
       r=await ctx.new_page(); errs=[]
@@ -31,7 +34,7 @@ async def main():
       async def shot(p): await r.wait_for_timeout(500); await r.screenshot(path=O+p)
       async def tab(t): await r.get_by_text(t,exact=True).last.click(); await r.wait_for_timeout(700)
       async def onboard(name):
-        await r.goto('http://localhost:8090/'); await r.wait_for_timeout(2500)
+        await r.goto(BASE+'/'); await r.wait_for_timeout(2500)
         await T('ob-agree').click(); await T('ob-continue').click(); await r.wait_for_timeout(600)
         await T('pf-name').fill(name); await T('pf-bd').fill('2026-03-28'); await T('pf-gender-girl').click()
         await T('pf-submit').click(); await r.wait_for_timeout(2000)

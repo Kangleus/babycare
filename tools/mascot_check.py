@@ -1,10 +1,11 @@
 """对比团团动画：Web 原 CSS 实现 vs 原生 Animated 实现（在浏览器里用 ?mascot=native 跑同一份 RN 代码）。
 两边都停在同一关键帧进度，截图做像素差。"""
-import asyncio, datetime, sys
+import asyncio, datetime, os, sys
 from playwright.async_api import async_playwright
 from PIL import Image, ImageChops
-O='/workspace/yijuji-app/shots/m1/anim/'
-import os; os.makedirs(O,exist_ok=True)
+import paths
+O = paths.sub('m1', 'anim')
+BASE = paths.BASE_URL
 DUR={'breath':2.6,'blink':4.2,'ring':1.6,'bubble':2.4,'zz':2.6,'sway':3.0}
 CLS={'breath':'.t-body','blink':'.t-eye','ring':'.t-ring','bubble':'.t-bubble','zz':'.t-z','sway':'.t-sprout'}
 def css(name,t):
@@ -20,16 +21,16 @@ def css(name,t):
 CASES=[('blink',0.94),('blink',0.925),('ring',0.7),('ring',0.65),('sway',0.0),('sway',1.0),('breath',1.0),('bubble',0.5),('bubble',0.92),('zz',0.3),('zz',0.65)]
 async def main():
   async with async_playwright() as pw:
-    b=await pw.chromium.launch(executable_path='/usr/bin/google-chrome',args=['--no-sandbox'])
+    b=await pw.chromium.launch(executable_path=paths.CHROME,args=['--no-sandbox'])
     ctx=await b.new_context(viewport={'width':390,'height':844},device_scale_factor=2)
     r=await ctx.new_page(); T=r.get_by_test_id; errs=[]
     await r.clock.set_system_time(datetime.datetime(2026,10,31,10,20,0))
-    await r.goto('http://localhost:8090/'); await r.wait_for_timeout(2500)
+    await r.goto(BASE+'/'); await r.wait_for_timeout(2500)
     await T('ob-agree').click(); await T('ob-continue').click(); await r.wait_for_timeout(500); await T('pf-submit').click(); await r.wait_for_timeout(2500)
     n=await ctx.new_page(); n.on('pageerror',lambda e:errs.append(str(e))); n.on('console',lambda m:errs.append(m.text) if m.type=='error' else None)
     await n.clock.set_system_time(datetime.datetime(2026,10,31,10,20,0))
-    await n.goto('http://localhost:8090/?mascot=native'); await n.wait_for_timeout(3000)
-    worst=0; rows=[]; matrix_err=[0]
+    await n.goto(BASE+'/?mascot=native'); await n.wait_for_timeout(3000)
+    worst=0; rows=[]; matrix_err=[0]; visual_bad=[False]
     for scene in ['home','sleep']:
       if scene=='sleep':
         for pg in (r,n): await pg.get_by_test_id('plus-sleep').click(); await pg.wait_for_timeout(1200)
@@ -65,6 +66,7 @@ async def main():
         worst=max(worst,pct); rows.append((scene,name,t,pct))
         c=Image.new('RGB',(A.width*2+10,A.height),'white');c.paste(A,(0,0));c.paste(B,(A.width+10,0));c.save(O+f'{scene}-{name}-{t}-cmp.png')
         ImageChops.difference(A,B).point(lambda v:255 if v>48 else 0).save(O+f'{scene}-{name}-{t}-diff.png')
+        if paths.visual_report(f'{scene}-{name}-{t}-cmp.png',pct): visual_bad[0]=True
         os.remove(fa); os.remove(fb)
     for row in rows: print('%-5s %-6s t=%-5s diff %.3f%%'%row)
     # 非静止：原生实现确实在动（同一位置连续两帧不同）
@@ -73,5 +75,5 @@ async def main():
     moving=s1!=s2
     print('native mascot animating:',moving,'errors:',errs,'worst pixel diff %.3f%%'%worst,'max transform error %.5f'%matrix_err[0])
     await b.close()
-    sys.exit(0 if moving and not errs and worst<1.0 and matrix_err[0]<0.01 else 1)
+    sys.exit(0 if moving and not errs and worst<1.0 and matrix_err[0]<0.01 and not visual_bad[0] else 1)
 asyncio.run(main())

@@ -1,14 +1,17 @@
 """改名「团子育儿本」截图确认：欢迎页标题、首页、我的（关于 + 底部版本行）、关于页、给医生看摘要页脚。"""
 import asyncio
 from playwright.async_api import async_playwright
-O='/workspace/yijuji-app/shots/rename/'
+import paths
+BASE = paths.BASE_URL
+PROTO = paths.require_proto()
+O = paths.sub('rename')
 async def main():
   async with async_playwright() as pw:
-    b=await pw.chromium.launch(executable_path='/usr/bin/google-chrome',args=['--no-sandbox'])
+    b=await pw.chromium.launch(executable_path=paths.CHROME,args=['--no-sandbox'])
     ctx=await b.new_context(viewport={'width':390,'height':844},device_scale_factor=2,timezone_id='Asia/Shanghai')
     r=await ctx.new_page(); T=r.get_by_test_id; errs=[]
     r.on('pageerror',lambda e:errs.append(str(e)))
-    await r.goto('http://localhost:8090/'); await r.wait_for_timeout(2500)
+    await r.goto(BASE+'/'); await r.wait_for_timeout(2500)
     print('title:', await r.title())
     await r.screenshot(path=O+'01-welcome.png')
     # 标题是否单行：测欢迎标题高度
