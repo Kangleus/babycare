@@ -170,10 +170,15 @@ function Bubble({ m, onRetry, onAskAction, onToast }: { m: AskMsg; onRetry: (q: 
     );
   }
   if (m.kind === 'typing') {
+    /* 原型只有三个点（.typing），这里在点后面补一句状态说明：
+       字体/字重/颜色沿用气泡正文口径（13.5 / 600 / var(--sub)），气泡本身仍是 .bb。 */
     return (
       <BotBubble mood="idle" testID="ask-typing">
-        <View style={{ flexDirection: 'row', gap: 4, paddingVertical: 6 }}>
-          {[0, 1, 2].map(i => <View key={i} style={[s.typingDot, { backgroundColor: p.sub }]} />)}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 3 }}>
+          <View style={{ flexDirection: 'row', gap: 4 }}>
+            {[0, 1, 2].map(i => <View key={i} style={[s.typingDot, { backgroundColor: p.sub }]} />)}
+          </View>
+          <Text testID="ask-typing-text" style={[s.body, { color: p.sub, fontSize: 13 }]}>团团在翻记录…</Text>
         </View>
       </BotBubble>
     );
