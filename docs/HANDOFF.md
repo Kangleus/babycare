@@ -13,7 +13,7 @@
 
 ## 3. 技术栈与结构
 - React Native + Expo SDK 58，TypeScript，Expo Router，react-native-svg，动画用 RN Animated。
-- 数据层可切换：`src/data/repo.ts` 的 `getRepo()` —— 未登录用 LocalRepo（本地），登录后用 SupabaseRepo；离线优先，outbox 队列每 15s 重试，records 开 Realtime。细节见 `docs-DATA.md`、`docs-CLOUD.md`。
+- 数据层可切换：`src/data/repo.ts` 的 `getRepo()` —— 未登录用 LocalRepo（本地），登录后用 SupabaseRepo；离线优先，outbox 队列每 15s 重试，records 开 Realtime。细节见 `docs/DATA.md`、`docs/CLOUD.md`。
 - 后端：Supabase 项目「Baby」，ref `wzfbdvlmkoeftvtnmiex`，新加坡，免费版。表：profiles, families, family_members, babies, records, card_settings, family_invites, episodes, allergies, vaccines, reminders, ai 用量表。全部开 RLS；建家庭/邀请（6 位、48 小时、一次性）/注销账号走 SECURITY DEFINER RPC。迁移在 `supabase/migrations/`。
 - 登录：邮箱 + 密码（Supabase 已关 Confirm email）。手机号登录暂不做。
 - Edge Function `voice-parse`（`supabase/functions/`）：校验 JWT 与家庭成员身份 → 百炼 Fun-ASR（宝宝词热词，失败退 qwen3-asr-flash）→ qwen-flash 解析成记录 JSON → 失败退本地规则；每户每日 60 次上限。读 secret `DASHSCOPE_API_KEY`。
@@ -32,8 +32,13 @@
 - 上架合规（暂缓）：数据迁国内云、ICP/App 备案、软著、生成式 AI 相关登记（个人主体能否办待确认）、商标（第 9/42 类未查）。
 
 ## 5. 测试
-- `npm run e2e`（74）、`npm run e2e:m4`（47）、`npm run test:cloud`（52）、`npm run test:cloud-ui`（20）、`tools/e2e_m3.py`（34）、`check:mascot`、`check:night`。
-- 注意：Python 测试脚本的 package.json 路径写死为 `/workspace/.venv-proto/bin/python`（原开发机），在新机器上需建一个装了 playwright 的 venv 并改路径。云端测试需要 `.env.test`（gitignored，含测试账号密码，需自行创建测试账号，跑完清理）。
+- 一条命令跑全套（自动构建 + 起静态服务 + 收尾 + 汇总视觉差异）：`npm run setup:test`（每台机器一次）→ `npm run test:web`
+  - 覆盖 `e2e.py`、`e2e_m4.py`、`check:mascot`、`check:night`，不需要账号和密钥
+- 需要真实账号的：`npm run test:cloud`（Node，RLS/邀请/注销）、`npm run test:cloud-ui`（两账号界面联调）、`tools/e2e_m3.py`（语音，需 `.env.test` + 百炼 key）。这些**不进 CI**。
+- 脚本不再写死机器路径：统一走 `tools/paths.py`，可用 `E2E_BASE_URL` / `E2E_SHOTS_DIR` / `CHROME_PATH` / `ENV_TEST_FILE` / `VISUAL_WARN_PCT` / `VISUAL_STRICT` 覆盖。
+- 视觉对比不许静默：超过阈值（默认 2%）会打醒目警告并进 `test:web` 的汇总段；`VISUAL_STRICT=1` 时直接判失败。
+- CI：`.github/workflows/ci.yml`，PR 上跑「类型检查 + Lint」和「网页版验收测试」两个 job。
+- 云端测试需要 `.env.test`（gitignored，含测试账号密码，需自行创建测试账号，跑完清理）。
 
 ## 6. 参考资料
 - 视觉原型：`docs/prototype/index.html`
