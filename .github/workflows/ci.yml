@@ -43,6 +43,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+          cache: pip
+          cache-dependency-path: tools/test-requirements.txt
 
       - name: 安装 Node 依赖
         run: npm ci
@@ -50,10 +52,12 @@ jobs:
       - name: 构建网页版
         run: npx expo export --platform web --output-dir dist
 
+      # pip 从 PyPI 拉 wheel 偶尔会断（实测遇到过一次 BrokenPipe），加长超时并重试；
+      # playwright 的浏览器下载同理。
       - name: 安装测试依赖
         run: |
           python -m venv .venv
-          .venv/bin/pip install --quiet -r tools/test-requirements.txt
+          .venv/bin/pip install --quiet --retries 5 --timeout 60 -r tools/test-requirements.txt
           .venv/bin/python -m playwright install --with-deps chromium
 
       - name: 跑测试（e2e / e2e:m4 / mascot / night）
