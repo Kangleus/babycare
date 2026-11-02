@@ -131,10 +131,22 @@ def main(argv):
         print(f'  {"PASS" if rc == 0 else "FAIL"}  {n:<18} {dt:6.1f}s   {LABELS.get(n, "")}')
 
     if visual:
+        over = [r for r in visual if r[0] == 'OVER']
+        exempt = [r for r in visual if r[0] == 'EXEMPT']
         print()
-        print(f'  视觉差异：{len(visual)} 处超过阈值（样式必须与原型一致，见 docs/HANDOFF.md 第 2 节）')
-        for name, pct, extra in visual:
-            print(f'    ⚠️  {name}  {pct}%  {extra}'.rstrip())
+        if over:
+            print(f'  视觉差异：{len(over)} 处超过阈值（样式必须与原型一致，见 docs/HANDOFF.md 第 2 节）')
+            for _, name, pct, extra in over:
+                print(f'    ⚠️  {name}  {pct}%  {extra}'.rstrip())
+        else:
+            print('  视觉差异：全部在阈值内')
+        if exempt:
+            print()
+            print(f'  视觉豁免：{len(exempt)} 处（原型未跟上，已记录但不计为失败）')
+            for _, name, pct, reason in exempt:
+                print(f'    · {name}  {pct}%')
+                print(f'      原因：{reason}')
+            print('    豁免清单：tools/visual-allowlist.txt（原型补上后请删掉对应行）')
     else:
         print()
         print('  视觉差异：全部在阈值内')

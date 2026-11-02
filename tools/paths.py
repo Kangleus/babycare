@@ -79,20 +79,60 @@ def load_env_file(path=None):
     return out
 
 
+ALLOWLIST = ROOT / 'tools' / 'visual-allowlist.txt'
+
+
+def _load_allowlist():
+    """读豁免名单：每行 「前缀 <空白> 原因」。没有原因的行忽略。"""
+    out = []
+    if not ALLOWLIST.exists():
+        return out
+    for raw in ALLOWLIST.read_text(encoding='utf-8').splitlines():
+        line = raw.strip()
+        if not line or line.startswith('#'):
+            continue
+        parts = line.split(None, 1)
+        if len(parts) == 2:
+            out.append((parts[0], parts[1].strip()))
+    return out
+
+
+_ALLOW = _load_allowlist()
+
+
+def _exempt_reason(name):
+    for prefix, reason in _ALLOW:
+        if name.startswith(prefix):
+            return reason
+    return None
+
+
 def visual_report(name, pct, extra=''):
     """像素差异的统一出口：无论是否超阈值都打印百分比，超阈值醒目告警。
 
     视觉标准是硬规则（见 docs/HANDOFF.md 第 2 节），所以这里不允许静默：
       - 每条对比都留一行记录
       - 超阈值打 ⚠️ 块，并写入 VISUAL_REPORT_FILE 供 test:web 汇总
-      - VISUAL_STRICT=1 时超阈值算失败
+      - 豁免名单（tools/visual-allowlist.txt）里的条目仍然打印、仍然汇总，
+        但标注为「已豁免」并附原因，不算需要处理的告警
+      - VISUAL_STRICT=1 时，未豁免的超阈值差异算失败
     返回 True 表示这条差异是否应判为失败。
     """
     over = pct > VISUAL_WARN_PCT
-    line = f'{name} {pct:.2f}%' + (f'  {extra}' if extra else '')
-    print(('  visual ' if not over else '  visual ') + line)
+    print(f'  visual {name} {pct:.2f}%' + (f'  {extra}' if extra else ''))
     if not over:
         return False
+
+    exempt = _exempt_reason(name)
+    if exempt:
+        print()
+        print(f'  ⚠️  已豁免（{exempt}）')
+        print(f'     {name}  {pct:.2f}%  —— 原型未跟上，差异属预期；补上原型后应删掉豁免。')
+        print()
+        if _VISUAL_LOG:
+            _log('EXEMPT', name, pct, exempt + (f' | {extra}' if extra else ''))
+        return False
+
     print()
     print('  ' + '!' * 56)
     print(f'  ⚠️  视觉差异超标：{name}  {pct:.2f}%（阈值 {VISUAL_WARN_PCT:.1f}%）')
@@ -100,12 +140,17 @@ def visual_report(name, pct, extra=''):
     print('  ' + '!' * 56)
     print()
     if _VISUAL_LOG:
-        try:
-            with open(_VISUAL_LOG, 'a', encoding='utf-8') as f:
-                f.write(f'{name}\t{pct:.2f}\t{extra}\n')
-        except OSError:
-            pass
+        _log('OVER', name, pct, extra)
     return VISUAL_STRICT
+
+
+def _log(status, name, pct, extra):
+    try:
+        with open(_VISUAL_LOG, 'a', encoding='utf-8') as f:
+            f.write(f'{status}\t{name}\t{pct:.2f}\t{extra}\n')
+    except OSError:
+        pass
+
 
 
 def require_proto():

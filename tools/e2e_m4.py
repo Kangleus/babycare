@@ -17,7 +17,7 @@ def side(a,b,o):
   c=Image.new('RGB',(A.width*2+20,max(A.height,B.height)),'white');c.paste(A,(0,0));c.paste(B,(A.width+20,0));c.save(O+o)
   d=ImageChops.difference(A,B.resize(A.size)).convert('L');px=sum(1 for v in d.getdata() if v>40)
   pct=px/(A.width*A.height)*100
-  if paths.visual_report(o,pct): bad.append('visual '+o)
+  if paths.visual_report('m4/'+o,pct): bad.append('visual '+o)
 
 async def main():
   async with async_playwright() as pw:
@@ -160,9 +160,13 @@ async def main():
     check('doctor sheet: med times listed', re.search(r'\d\d:\d\d 益生菌',m) is not None, m)
     check('doctor sheet: 不含诊断 · 仅供参考 footer', '不含诊断' in m and '仅供参考' in m)
     await shot('09-doctor-sheet.png')
+    # 文字分享在 Web 上的策略是「浏览器支持 navigator.share 就走系统分享，否则复制到剪贴板」。
+    # 宿主机 Chrome 的实现不一样（macOS 有 Web Share，Linux 没有），所以这里显式去掉 share，
+    # 固定测「复制」这条兜底路径 —— 不让测试结果取决于跑测试的是哪台机器。
+    await r.evaluate("Object.defineProperty(navigator,'share',{value:undefined,configurable:true})")
     await T('doctor-text').click(); await r.wait_for_timeout(700)
     clip=await r.evaluate('navigator.clipboard.readText()')
-    check('share text → clipboard summary', '【体温' in clip and '不含诊断' in clip, clip[:80])
+    check('share text → clipboard summary（无 share 时走复制）', '【体温' in clip and '不含诊断' in clip, clip[:80])
     async with r.expect_download() as dl: await T('doctor-img').click()
     d=await dl.value; await d.save_as(O+'10-doctor-summary-export.png')
     im=Image.open(O+'10-doctor-summary-export.png'); check('share image → PNG of the memo', im.width>300 and im.height>300, im.size)
