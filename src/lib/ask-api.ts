@@ -16,6 +16,14 @@ export type AskAnswer = {
   action?: { type: 'open_summary'; aud: 'doctor' | 'granny'; range: 1 | 3 | 7 };
   mood: 'idle' | 'happy' | 'worry';
 };
+export type AskMsg =
+  | { id: string; who: 'me'; text: string }
+  | { id: string; who: 'bot'; kind: 'typing' }
+  | { id: string; who: 'bot'; kind: 'answer'; a: AskAnswer; fb?: boolean }
+  | { id: string; who: 'bot'; kind: 'urgent'; card: UrgentCard }
+  | { id: string; who: 'bot'; kind: 'login' }
+  | { id: string; who: 'bot'; kind: 'error'; message: string; retry?: string };
+
 export type AskOk = {
   ok: true; tier: Tier; urgent?: { reasons: string[] }; answer: AskAnswer | null;
   usage: { used: number; limit: number } | null;
@@ -33,11 +41,12 @@ export function askLocalUrgent(
 ): { tier: 'urgent'; reasons: string[]; card: UrgentCard } | null {
   const r = ruleTier(question, { ageDays, nowMs: +now, ...(latestTemp ? { latestTemp } : {}) });
   if (r.tier !== 'urgent') return null;
-  return {
-    tier: 'urgent', reasons: r.reasons,
-    card: urgentCard(r.reasons, records.map(x => ({ type: x.type, time: x.time, endTime: x.endTime ?? null, values: x.values as Record<string, unknown>, createdBy: x.createdBy })), now, babyName),
-  };
+  return { tier: 'urgent', reasons: r.reasons, card: localUrgentCard(r.reasons, records, now, babyName) };
 }
+
+/** 服务端判紧急时，用本机记录渲染同样的紧急卡 */
+export const localUrgentCard = (reasons: string[], records: BabyRecord[], now: Date, babyName: string) =>
+  urgentCard(reasons, records.map(x => ({ type: x.type, time: x.time, endTime: x.endTime ?? null, values: x.values as Record<string, unknown>, createdBy: x.createdBy })), now, babyName);
 
 /** 是否已登录并加入家庭（工具要读云端记录，服务端按家庭计次） */
 export const askReady = (babyId?: string) => {
