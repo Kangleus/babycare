@@ -90,7 +90,12 @@ Deno.serve(async (req: Request) => {
     if (!q.ok) return fail(502, 'db', '暂时连不上，请稍后再试');
     used = Number(await q.json()) || 0;
   } catch { return fail(502, 'db', '暂时连不上，请稍后再试'); }
-  if (used > limit) return fail(429, 'quota', '今天问得有点多啦，明天再聊');
+  /* 超限：记一行「第几次被挡」的日志，便于判断额度是否定得太紧。
+     只记 tier 和 used —— 不记问题原文、不记回答、不记记录内容。 */
+  if (used > limit) {
+    log({ tier: 'quota', used });
+    return fail(429, 'quota', '今天问得有点多啦，明天再聊');
+  }
 
   /* 4) 数据源：全部用用户 JWT 读，RLS 保证只看自家 */
   const ds: DataSource = {
