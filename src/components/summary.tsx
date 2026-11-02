@@ -25,9 +25,9 @@ export function SummarySheet() {
 }
 
 function SummaryBody({ onClose }: { onClose: () => void }) {
-  const { p, baby, records, health, now, me, showToast } = useApp();
+  const { p, baby, records, health, now, me, showToast, summaryAud } = useApp();
   const [stage, setStage] = useState<'pick' | 'gen' | 'memo'>('pick');
-  const [aud, setAud] = useState<Aud>('doctor');
+  const [aud, setAud] = useState<Aud>(summaryAud); // 从紧急卡进来时默认「给医生」
   const [range, setRange] = useState(3); // 原型默认「近 3 天」
   const [memo, setMemo] = useState<Memo | null>(null);
   const [busy, setBusy] = useState(false);

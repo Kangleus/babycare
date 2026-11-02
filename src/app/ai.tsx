@@ -14,7 +14,7 @@ export default function Ai() {
         <View style={{ flex: 1, minWidth: 0 }}>
           <PTitle title="问团子" sub={`只看${(baby?.name ?? '宝宝')}的记录回答 · 演示`} />
         </View>
-        <Pressable testID="summary-open" onPress={openSummary}
+        <Pressable testID="summary-open" onPress={() => openSummary()}
           style={({ pressed }) => [s.pill, { backgroundColor: p.pink, borderColor: p.ink, shadowColor: p.shadow }, pressed ? { transform: [{ translateY: 3 }] } : hard(p, 3)]}>
           <Icon name="doc" size={16} color={p.ink} />
           <Txt f="b9" size={12.5}>一键摘要</Txt>

@@ -68,7 +68,7 @@ export default function Me() {
         <List>
           <Li testID="me-health" icon="medbook" iconBg={p.pink} t="健康档案" sub="体温 · 用药 · 就诊 · 疫苗体检" onPress={() => goHealth('top')} />
           <Li testID="me-rem" icon="clock" iconBg={p.lilac} t="提醒事项" sub="用药 · 复诊 · 疫苗 · 体检" right={<Free t={`${reminders.length} 项待办`} bg={p.yellow} />} onPress={() => goHealth('rem')} />
-          <Li testID="me-summary" icon="doc" iconBg={p.yellow} t="一键摘要" sub="给医生 / 给奶奶的小便签" onPress={openSummary} last />
+          <Li testID="me-summary" icon="doc" iconBg={p.yellow} t="一键摘要" sub="给医生 / 给奶奶的小便签" onPress={() => openSummary()} last />
         </List>
 
         <HGroup t="家庭成员" ok={linked && c.status === 'synced' ? '已同步' : undefined} mini={linked ? `${c.link!.familyName} · ${members.length} 人` : signedIn ? '登录后创建或加入家庭' : '登录后可邀请家人'} />
