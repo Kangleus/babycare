@@ -1756,4 +1756,757 @@ function renderHealth(keep){
 
 init();
 </script>
+<style id="ob-style">
+/* =========================================================
+   v0.5 首次使用流程（仅 #onboarding 入口使用；默认入口不会生成这些元素，样式全部是新类名）
+   复用：.full 整页 / .card / .btn.go / .inp / .segbig / .seg / .cbox / .sheet / .heard / .growcard / .pred / .note-desc / .pillbtn
+   ========================================================= */
+#obOv{position:absolute;inset:0;z-index:108;display:none}
+#obOv.on{display:block}
+.full.ob{display:flex;flex-direction:column}
+.full.ob.still{animation:none}
+.full.ob .bar .iconbtn .bk{transform:rotate(180deg)}
+.ob-blue{background:var(--blue)}.ob-green{background:var(--green)}.ob-pink{background:var(--pink)}.ob-orange{background:var(--orange)}.ob-yellow{background:var(--yellow)}
+body.night .full.ob{color:#2a1f16}
+body.night .full.ob .card,body.night .full.ob .ob-banner,body.night .full.ob .ob-feat,body.night .full.ob .ob-choice,body.night .full.ob .note-desc,body.night .full.ob .btn,body.night .full.ob .segbig,body.night .full.ob .iconbtn{color:var(--ink)}
+/* 欢迎页 */
+.ob-top{display:flex;justify-content:flex-end;height:42px}
+.ob-hero{position:relative;width:210px;height:210px;margin:-6px auto -10px}
+.ob-brand{text-align:center;font-family:var(--fh);font-size:38px;line-height:1.05}
+.ob-slogan{text-align:center;font-size:15px;font-weight:900;margin:8px 0 0;line-height:1.5}
+.ob-feats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}
+.ob-feat{background:var(--card);border:2.5px solid var(--ink);border-radius:22px;padding:10px;box-shadow:0 3px 0 var(--shadow);display:flex;gap:8px;align-items:center;animation:popin .45s var(--spring) both}
+.ob-feat:nth-child(2){animation-delay:.06s}.ob-feat:nth-child(3){animation-delay:.12s}.ob-feat:nth-child(4){animation-delay:.18s}
+.ob-feat .ic{width:36px;height:36px;border-radius:13px;border:2px solid var(--ink);display:grid;place-items:center;flex:none;background:var(--k)}
+.ob-feat .t{font-weight:900;font-size:13.5px;line-height:1.2}
+.ob-feat .s{font-size:10.5px;color:var(--sub);font-weight:800;margin-top:2px;line-height:1.35}
+.ob-link{display:block;margin:16px auto 0;font-size:14px;font-weight:900;text-decoration:underline;text-underline-offset:4px;text-decoration-thickness:2px}
+.ob-mini{font-size:11.5px;font-weight:800;opacity:.72;text-align:center;margin-top:10px;line-height:1.6}
+.ob-grow{flex:1}
+/* 表单 */
+.ob-hs{position:relative;width:150px;height:150px;margin:0 auto -6px}
+.ob-line{text-align:center;font-weight:900;font-size:14px;margin:0 0 12px}
+.full.ob .segbig{margin:0 0 14px;background:var(--card)}
+.full.ob .inp{background:var(--bg);margin-bottom:2px}
+.full.ob .inp input{height:38px}
+.full.ob .inp .pre{font-family:var(--fn);font-weight:900;font-size:14px;padding-right:8px;border-right:2px solid var(--line)}
+.full.ob .inp .get{width:auto;height:38px;border-radius:99px;padding:0 12px;font-size:12.5px;font-weight:900;white-space:nowrap}
+.full.ob .inp input[type=date]{font-family:var(--fn);font-weight:800}
+.full.ob .inp input[type=date]::-webkit-calendar-picker-indicator{opacity:.55;cursor:pointer}
+.inp.err{border-color:#C9452F;background:#FFF4F1!important}
+body.night .inp.err{background:#4a2a24!important}
+.ob-err{display:flex;gap:5px;align-items:center;color:#C9452F;font-size:12px;font-weight:900;margin:7px 4px 0;line-height:1.4}
+body.night .ob-err{color:#ff9d8a}
+.full .fl.ob-mt{margin-top:14px}
+.ob-banner{border:2.5px dashed var(--ink);border-radius:18px;padding:9px 12px;background:var(--card);margin:2px 0 14px;box-shadow:0 3px 0 var(--shadow);animation:popin .4s var(--spring) both}
+.ob-banner.ok{background:var(--green-s)}.ob-banner.err{background:#FFE6E0}
+body.night .ob-banner.err{background:#4a2a24}
+.ob-banner .t{font-size:13px;font-weight:900;display:flex;gap:6px;align-items:center}
+.ob-banner.err .t{color:#C9452F}
+body.night .ob-banner.err .t{color:#ff9d8a}
+.ob-banner .s{font-size:11.5px;color:var(--sub);font-weight:800;margin-top:2px;line-height:1.5}
+.ob-row{display:flex;justify-content:space-between;align-items:center;margin-top:10px}
+.ob-forgot{font-size:12.5px;font-weight:900;color:var(--sub);text-decoration:underline;text-underline-offset:3px}
+.ob-agree{display:flex;gap:10px;align-items:center;margin-top:14px;font-size:12.5px;font-weight:800;line-height:1.5;text-align:left;width:100%}
+.ob-agree .cbox.on{background:var(--green)}
+.ob-agree .lk{color:#C8546B;font-weight:900;cursor:pointer}
+body.night .ob-agree .lk{color:var(--pink)}
+.ob-agree.shake{animation:wig .5s}
+.full .btn.go.off{opacity:.45}
+.full .btn.go.sub2{margin-top:12px;height:52px;font-size:16px;background:transparent;box-shadow:none;border-style:dashed}
+.note-desc.ob-demo-n{margin-top:14px;font-size:11.5px;align-items:flex-start;flex-direction:column;gap:6px;background:rgba(255,255,255,.55)}
+body.night .note-desc.ob-demo-n{background:rgba(0,0,0,.18)}
+.ob-fills{display:flex;gap:6px;flex-wrap:wrap}
+.ob-fill{font-size:11px;font-weight:900;border:2px solid var(--ink);border-radius:99px;padding:3px 9px;background:var(--card);box-shadow:0 2px 0 var(--shadow);color:var(--ink)}
+.ob-fill:active{transform:translateY(2px);box-shadow:none}
+.ob-tag{display:inline-block;font-size:10px;font-weight:900;border:1.5px dashed var(--ink);border-radius:99px;padding:1px 8px;background:var(--card);color:var(--ink);vertical-align:2px}
+/* 验证邮件 / 步骤 */
+.ob-mail{font-family:var(--fn);font-weight:900;font-size:15px;background:var(--yellow-s);border-radius:10px;padding:1px 6px;word-break:break-all}
+.ob-step{display:flex;gap:10px;align-items:center;padding:9px 0;border-top:2px dashed var(--line);font-size:13px;font-weight:800;line-height:1.45}
+.ob-step:first-of-type{border-top:0}
+.ob-step b{width:26px;height:26px;border-radius:9px;border:2px solid var(--ink);background:var(--yellow);display:grid;place-items:center;font-family:var(--fn);font-size:12.5px;flex:none}
+.ob-resend{display:block;margin:14px auto 0;font-size:12.5px;font-weight:900;opacity:.8}
+.ob-resend u{text-underline-offset:3px}
+/* 选择页 */
+.ob-choice{display:flex;gap:12px;align-items:center;width:100%;text-align:left;background:var(--card);border:3px solid var(--ink);border-radius:28px;padding:14px 12px 14px 14px;box-shadow:0 5px 0 var(--shadow);margin-top:14px;transition:transform .25s var(--spring),box-shadow .2s;animation:popin .45s var(--spring) both}
+.ob-choice+.ob-choice{animation-delay:.08s}
+.ob-choice:active{transform:translateY(4px);box-shadow:0 1px 0 var(--shadow)}
+.ob-choice .m{width:78px;height:78px;flex:none;border-radius:24px;border:2.5px solid var(--ink);background:var(--k);display:grid;place-items:center;overflow:hidden}
+.ob-choice .m svg.tuan{width:74px;height:74px;margin-top:8px}
+.ob-choice .main{flex:1;min-width:0}
+.ob-choice .t,.ob-choice .s{display:block}
+.ob-choice .t{font-family:var(--fh);font-size:22px;line-height:1.1}
+.ob-choice .s{font-size:12px;color:var(--sub);font-weight:800;margin-top:4px;line-height:1.45}
+.ob-choice .tg2{display:inline-block;margin-top:6px;font-size:10.5px;font-weight:900;background:var(--k);border:1.5px solid var(--ink);border-radius:99px;padding:1px 8px}
+/* 邀请码 */
+.ob-code{position:relative;display:flex;gap:7px;justify-content:center;margin:4px 0 6px}
+.ob-code span{width:40px;height:50px;border-radius:14px;border:2.5px solid var(--ink);background:var(--card);display:grid;place-items:center;font-family:var(--fh);font-size:24px;box-shadow:0 3px 0 var(--shadow);transition:transform .25s var(--spring)}
+.ob-code span.cur{background:var(--yellow-s);outline:3px dashed #FF7A92;outline-offset:2px;transform:translateY(-2px)}
+.ob-code.err span{border-color:#C9452F}
+.ob-code input{position:absolute;inset:0;width:100%;opacity:0;font-size:16px;cursor:text}
+.ob-code.big span{width:44px;height:56px;font-size:27px}
+/* 宝宝资料 */
+.ob-avs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.ob-av{display:flex;flex-direction:column;align-items:center;gap:2px;padding:7px 0 6px;border-radius:18px;border:2px solid var(--ink);background:var(--bg);font-size:10.5px;font-weight:900;color:var(--sub);transition:transform .25s var(--spring)}
+.ob-av.on{background:var(--pink-s);color:var(--ink);box-shadow:0 3px 0 var(--shadow);transform:translateY(-1px)}
+.ob-av .w{width:44px;height:44px;display:grid;place-items:center;overflow:hidden}
+.ob-av .w svg.tuan{width:48px;height:48px;margin-top:4px}
+.ob-baby{display:flex;gap:12px;align-items:center;background:var(--pink-s);border:2.5px solid var(--ink);border-radius:22px;padding:10px 12px;box-shadow:0 3px 0 var(--shadow)}
+.ob-baby .avatar{width:54px;height:54px;border-radius:19px;background:var(--card)}
+.ob-baby .n{font-family:var(--fh);font-size:22px;line-height:1.1}
+.ob-baby .s{font-size:11.5px;color:var(--sub);font-weight:800;margin-top:2px}
+.avatar svg.tuan{width:56px;height:56px;margin-top:6px}
+.profile .avatar svg.tuan{width:72px;height:72px;margin-top:8px}
+/* 空首页 */
+.pred.ob-pred{min-height:0}
+.ob-dots{display:flex;gap:6px;align-items:center;margin-top:9px;position:relative;font-size:11.5px;font-weight:900}
+.ob-dots i{width:26px;height:10px;border-radius:9px;border:2px solid var(--ink);background:rgba(255,255,255,.7)}
+.ob-dots i.on{background:var(--green)}
+body.night .ob-dots i{background:rgba(0,0,0,.18)} body.night .ob-dots i.on{background:var(--green)}
+.ob-empty{display:flex;gap:10px;align-items:center;background:var(--bg2);border:2.5px dashed var(--line);border-radius:22px;padding:10px 12px;font-size:12px;font-weight:800;color:var(--sub);line-height:1.5}
+.ob-empty .m{width:66px;height:66px;flex:none}
+.ob-empty b{display:block;color:var(--ink);font-size:14.5px;font-weight:900;margin-bottom:1px}
+.growcard.ob-nudge{position:relative;background:var(--pink-s);margin-top:16px}
+.growcard.ob-nudge .ic{width:46px;height:46px;border-radius:16px;border:2.5px solid var(--ink);background:var(--pink);display:grid;place-items:center;flex:none}
+.growcard.ob-nudge .x{position:absolute;right:8px;top:8px;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;color:var(--sub)}
+.growcard.ob-nudge .go2{font-size:12px;font-weight:900;background:var(--card);border:2px solid var(--ink);border-radius:99px;padding:4px 11px;box-shadow:0 2px 0 var(--shadow);flex:none;margin-right:18px}
+#obGuide{position:absolute;left:0;right:0;margin:0 auto;bottom:150px;z-index:75;width:max-content;max-width:330px;background:var(--card);border:3px solid var(--ink);border-radius:22px;padding:10px 16px 9px;box-shadow:0 4px 0 var(--shadow);text-align:center;animation:popin .5s var(--spring) both,obfloat 2.4s .6s ease-in-out infinite}
+#obGuide:after{content:"";position:absolute;left:50%;bottom:-11px;width:16px;height:16px;margin-left:-8px;background:var(--card);border-right:3px solid var(--ink);border-bottom:3px solid var(--ink);transform:rotate(45deg);border-radius:0 0 4px 0}
+#obGuide .h{font-size:18px;line-height:1.25}
+#obGuide .h b{color:#E5738A;font-weight:400}
+body.night #obGuide .h b{color:var(--pink)}
+#obGuide .s{font-size:11px;font-weight:800;color:var(--sub);margin-top:3px}
+#obGuide .s u{cursor:pointer;text-underline-offset:2px}
+@keyframes obfloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+body.ob-guide .mic:after{content:"";position:absolute;inset:-12px;border-radius:50%;border:3px solid var(--pink);animation:ripple 1.8s ease-out infinite;pointer-events:none}
+body.ob-guide #sample,body.ob-guide #samplesPop,body.ob-demo #sample,body.ob-demo #samplesPop{display:none}
+/* 示例模式 */
+#obDemoBar{position:absolute;left:12px;right:12px;top:50px;z-index:95;display:flex;align-items:center;gap:8px;background:var(--yellow-s);border:2.5px dashed var(--ink);border-radius:22px;padding:5px 6px 5px 4px;box-shadow:0 3px 0 var(--shadow);animation:popin .45s var(--spring) both}
+#obDemoBar .m{width:42px;height:42px;flex:none;margin:-4px 0 -2px}
+#obDemoBar .tx{flex:1;min-width:0}
+#obDemoBar .t{font-size:12.5px;font-weight:900;line-height:1.35;word-break:keep-all}
+#obDemoBar .s{font-size:10.5px;font-weight:800;color:var(--sub)}
+#obDemoBar .pillbtn{padding:7px 11px;font-size:12px}
+body.ob-demo .page{padding-top:118px}
+body.ob-demo .topfade{height:112px}
+/* 我的（已登录） */
+.li .t.dang{color:#C9452F}
+body.night .li .t.dang{color:#ff9d8a}
+.li .free.sync{background:var(--green)}
+.ob-cta{display:flex;gap:12px;align-items:center;background:var(--yellow);border:3px solid var(--ink);border-radius:26px;padding:12px 14px;margin-top:14px;box-shadow:0 4px 0 var(--shadow);width:100%;text-align:left;color:#2a1f16}
+.ob-cta .m{width:62px;height:62px;flex:none}
+/* 政策 / 确认 sheet */
+.ob-pol{background:var(--bg2);border:2px dashed var(--line);border-radius:16px;padding:12px;font-size:12px;font-weight:700;line-height:1.6;margin-top:12px}
+.ob-pol p{margin:0 0 6px}.ob-pol p:first-child{color:#C9452F;font-weight:900}
+.sheet .tipline.ob-tip{margin-top:12px}
+/* 流程导航（评审用，只在 #onboarding 模式出现） */
+.ob-navl{display:flex;flex-direction:column;gap:5px;margin-top:12px;max-height:calc(100vh - 260px);overflow-y:auto;scrollbar-width:none;padding:2px 4px 6px 2px}
+.ob-navl .g{font-size:11px;font-weight:900;color:#8C7A66;margin:6px 2px 0}
+.ob-navl button{display:flex;align-items:center;gap:8px;text-align:left;font-size:12.5px;font-weight:800;background:#fff;border:2px solid #4A3A2C;border-radius:14px;padding:5px 10px;box-shadow:0 2px 0 #4A3A2C;color:#4A3A2C}
+.ob-navl button b{flex:none;min-width:24px;height:20px;border-radius:7px;background:#FFF1C2;border:1.5px solid #4A3A2C;font-family:var(--fn);font-size:11px;display:grid;place-items:center;padding:0 4px}
+.ob-navl button.on{background:#FFD45C}
+.ob-navl button.alt{border-style:dashed;box-shadow:none}
+#obNavBtn{position:fixed;right:10px;top:50%;z-index:400;display:none;align-items:center;gap:4px;background:#FFD45C;border:2.5px solid #4A3A2C;border-radius:99px;padding:6px 10px;font-size:12px;font-weight:900;box-shadow:0 3px 0 #4A3A2C;color:#4A3A2C}
+#obNavPop{position:fixed;right:10px;top:12%;bottom:12%;z-index:401;width:230px;background:#FFF9EC;border:3px solid #4A3A2C;border-radius:22px;padding:10px;box-shadow:0 6px 0 #4A3A2C;display:none;overflow:hidden;flex-direction:column}
+#obNavPop.on{display:flex}
+#obNavPop .ob-navl{max-height:none;flex:1}
+#obNavPop h4{margin:2px 4px 0;font-family:var(--fh);font-weight:400;font-size:18px;display:flex;justify-content:space-between;align-items:center}
+@media (max-width:1000px){#obNavBtn{display:flex}}
+body.ob-shot #obNavBtn{display:none!important}
+</style>
+<script id="ob-script">
+/* =========================================================
+   v0.5 首次使用流程（登录必需 + 只读示例）
+   只有地址带 #onboarding 时才启用；默认入口一行都不执行，像素级不受影响。
+   入口：index.html#onboarding（从欢迎页开始），或 #onboarding/<页面 id> 直接跳到某页
+   ========================================================= */
+(function(){
+const isOB=()=>/^#onboarding/.test(location.hash);
+window.addEventListener('hashchange',()=>{if(isOB()){if(window.OBX)OBX.fromHash();else location.reload()}else if(window.OBX)location.reload()});
+if(!isOB())return;
+
+/* ---------- 常量 ---------- */
+const TODAY=new Date(2026,9,31); // 原型的「今天」= 2026-10-31 周六 10:20
+const POLICY=[
+  '【草案 · 占位文本 · 尚未经法务审核，不具法律效力】',
+  '1. 我们收集什么：你主动记录的宝宝信息（昵称、生日、性别）和喂奶、睡眠、尿布、体温、用药等记录。',
+  '2. 存在哪里：当前版本所有数据只保存在这台设备上，不上传服务器。开通云端同步后，会在你登录并同意后再上传，用于家人之间共享。',
+  '3. 语音：后续版本的语音记录在转成文字后不保存原始录音，不用于广告和模型训练。',
+  '4. 健康相关：团子育儿本只记录你说的内容，不做诊断、不推荐用药剂量；身体不适请及时就医。',
+  '5. 你的权利：可以随时在「我的 › 清空全部数据」删除本机全部数据，或导出数据（后续版本）。',
+  '6. 联系我们：正式版本会在此处提供联系方式。',
+];
+const RELS=['妈妈','爸爸','奶奶','爷爷','外婆','外公','其他'];
+const AVS=[['baby','宝宝脸'],['sprout','冒芽团子'],['flower','开花团子'],['crown','皇冠团子'],['cap','睡帽团子'],['bottle','奶瓶团子']];
+const FEEDS=[['formula','奶粉'],['bm','瓶喂母乳'],['breast','亲喂']];
+const clone=x=>JSON.parse(JSON.stringify(x));
+const DEMO0={events:clone(S.events),reminders:clone(S.reminders),lvl:S.lvl,xp:S.xp};
+const SAMPLE_BABY={name:'糯米',bd:'2026-09-12',gender:'boy',avatar:'sprout',feeding:'bm'};
+const FIRST_TEXT='刚喝了 120 毫升奶';
+SAMPLES.push({text:FIRST_TEXT,note:'第一句 · 记一次喂奶',g:'新手'});
+const FIRST_SAMPLE=SAMPLES.length-1;
+const blank=()=>({mode:'flow',scr:'welcome',auth:'up',email:'',pw:'',pw2:'',agree:false,err:{},banner:null,busy:false,cd:0,
+  baby:{name:'',bd:'',gender:'girl',avatar:'baby',feeding:'formula'},role:'妈妈',roleOther:'',
+  code:'',joinRole:'爸爸',joinOther:'',nudge:true,guide:true,first:false,setpwFrom:'forgot'});
+let O=blank();
+
+/* ---------- 新图标（同一套线条风格） ---------- */
+Object.assign(ic,{
+ back:s=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+ mail:s=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24"><rect x="3" y="5.5" width="18" height="13.5" rx="3" fill="#fff" stroke="${ink}" stroke-width="1.9"/><path d="M4.2 7.6l7.8 6 7.8-6" fill="none" stroke="${ink}" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/><circle cx="19" cy="6" r="2.7" fill="#FF9EB1" stroke="${ink}" stroke-width="1.6"/></svg>`,
+ lockk:s=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2.6" fill="#FFD45C" stroke="${ink}" stroke-width="1.9"/><path d="M8.2 10.5V8a3.8 3.8 0 0 1 7.6 0v2.5" fill="none" stroke="${ink}" stroke-width="1.9"/><circle cx="12" cy="15.3" r="1.5" fill="${ink}"/></svg>`,
+ logout:s=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24"><path d="M10.5 4H6.6a1.8 1.8 0 0 0-1.8 1.8v12.4A1.8 1.8 0 0 0 6.6 20h3.9" fill="none" stroke="${ink}" stroke-width="2" stroke-linecap="round"/><path d="M14.5 8l4 4-4 4M18.5 12H9.5" fill="none" stroke="${ink}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+ trash:s=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24"><path d="M6.8 7l.9 12.2a1.8 1.8 0 0 0 1.8 1.8h5a1.8 1.8 0 0 0 1.8-1.8L17.2 7z" fill="#fff" stroke="${ink}" stroke-width="1.9" stroke-linejoin="round"/><path d="M4.8 7h14.4M9.5 7V4.6h5V7M10.3 10.6v6.6M13.7 10.6v6.6" fill="none" stroke="${ink}" stroke-width="1.9" stroke-linecap="round"/></svg>`,
+});
+
+/* ---------- 小工具 ---------- */
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const okEmail=e=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.trim());
+const errLine=t=>t&&t!==true?`<div class="ob-err">${ic.warn(14)} ${t}</div>`:'';
+function ymd(s){if(!/^\d{4}-\d{2}-\d{2}$/.test(s||''))return null;const [y,m,d]=s.split('-').map(Number);const b=new Date(y,m-1,d);return isNaN(b)?null:b}
+function ageOf(bd){
+  const b=ymd(bd);if(!b||b>TODAY)return '';
+  let mo=(TODAY.getFullYear()-b.getFullYear())*12+TODAY.getMonth()-b.getMonth(),dd=TODAY.getDate()-b.getDate();
+  if(dd<0){mo--;dd+=new Date(TODAY.getFullYear(),TODAY.getMonth(),0).getDate()}
+  if(mo<1)return `出生第 ${Math.round((TODAY-b)/864e5)+1} 天`;
+  return `${mo} 个月${dd?` ${dd} 天`:''}`;
+}
+const babyAv=(k,s)=>!k||k==='baby'?ic.baby(s):tuan('happy',[k]);
+const DOUMI={name:'豆米',bd:'2026-03-28',gender:'girl',avatar:'baby',feeding:'formula'};
+const BB=()=>O.mode==='fresh'?O.baby:DOUMI;
+const meName=()=>O.mode==='joined'?(O.joinRole==='其他'?(O.joinOther.trim()||'家人'):O.joinRole):(O.role==='其他'?(O.roleOther.trim()||'家人'):O.role);
+const mail=()=>O.email.trim()||'mama@example.com';
+
+/* ---------- 容器 ---------- */
+const ov=document.createElement('div');ov.id='obOv';$('#screen').appendChild(ov);
+const sh=document.createElement('div');sh.id='obSheet';sh.className='ov sheet-ov';sh.style.zIndex='112';$('#screen').appendChild(sh);
+let lastScr='';
+function page(cls,title,body,o={}){
+  const still=lastScr===O.scr;lastScr=O.scr;
+  const bar=o.noBar?'':`<div class="bar">${o.back?`<button class="iconbtn" onclick="${o.back}" aria-label="返回">${ic.back(20)}</button>`:'<span style="width:42px"></span>'}<div class="h">${title}</div><span style="width:42px"></span></div>`;
+  return `<div class="full ob ${cls} ${still?'still':''}"><div class="blob-bg" style="width:260px;height:260px;right:-90px;top:60px"></div><div class="blob-bg" style="width:160px;height:160px;left:-60px;top:300px"></div>${bar}${body}</div>`;
+}
+const inp=(id,key,ph,o={})=>`<label class="inp ${o.err?'err':''}">${o.pre||''}<input id="${id}" type="${o.type||'text'}" ${o.attr||''} placeholder="${ph}" value="${esc(o.val!=null?o.val:O[key])}" oninput="OBX.set('${key}',this.value)" onkeydown="if(event.key==='Enter')${o.enter||'0'}">${o.btn||''}</label>`;
+const banner=b=>b?`<div class="ob-banner ${b.tone||''}"><div class="t">${b.icon||''}${b.t}</div>${b.s?`<div class="s">${b.s}</div>`:''}</div>`:'';
+const agreeRow=()=>`<button class="ob-agree ${O.shake?'shake':''}" onclick="OBX.agree()"><span class="cbox ${O.agree?'on':''}">${O.agree?ic.check(16):''}</span><span>我已阅读并同意 <span class="lk" onclick="event.stopPropagation();OBX.policy('privacy')">《隐私政策》</span><span class="lk" onclick="event.stopPropagation();OBX.policy('terms')">《用户协议》</span></span></button>`;
+function rolePicker(k,ko){
+  return `<div class="seg">${RELS.map(r=>`<button class="${O[k]===r?'on':''}" onclick="OBX.set('${k}','${r}',1)">${r}</button>`).join('')}</div>`+
+   (O[k]==='其他'?`<div style="margin-top:10px">${inp('obOther',ko,'怎么称呼你？比如：姑姑、小姨',{attr:'maxlength="6"'})}</div>`:'');
+}
+const demoNote=(html,fills)=>`<div class="note-desc ob-demo-n"><span><span class="ob-tag">原型演示</span> ${html}</span>${fills?`<div class="ob-fills">${fills}</div>`:''}</div>`;
+
+/* ---------- 1 欢迎页 ---------- */
+function sWelcome(){
+  const F=[['var(--pink)',ic.mic(22),'语音一句话','半夜单手，说一句就记好'],['var(--yellow)',ic.clock(22),'作息预测','下一顿、下次小睡心里有数'],['var(--blue)',ic.chat(22),'问团子','翻宝宝自己的记录来回答'],['var(--green)',ic.family(22),'家人一起记','爸妈奶奶记录自动同步']];
+  return page('ob-yellow','',`
+   <div class="ob-top"><button class="iconbtn" onclick="OBX.night()" title="夜间模式">${S.night?ic.sun(22):ic.moon(22)}</button></div>
+   <div class="ob-hero">${tuan('happy',S.night?['cap']:['sprout'],'nod')}</div>
+   <div class="ob-brand">团子育儿本</div>
+   <div class="ob-slogan">一句话记下宝宝的吃睡拉，团团帮你算</div>
+   <div class="ob-feats">${F.map(f=>`<div class="ob-feat" style="--k:${f[0]}"><span class="ic">${f[1]}</span><div><div class="t">${f[2]}</div><div class="s">${f[3]}</div></div></div>`).join('')}</div>
+   <div class="ob-grow"></div>
+   <button class="btn go" onclick="OBX.authMode('up')">${ic.sparkle(22)}<span>开始使用</span></button>
+   <button class="ob-link" onclick="OBX.enter('demo')">先看看示例</button>
+   <div class="ob-mini">示例是虚构的宝宝「豆米」，只能看，不会保存任何数据</div>`,{noBar:true});
+}
+
+/* ---------- 2 登录 / 注册 ---------- */
+function sAuth(){
+  const up=O.auth==='up',e=O.err;
+  return page('ob-blue',up?'注册':'登录',`
+   ${banner(O.banner)}
+   <div class="ob-hs">${tuan(O.busy?'listen':up?'happy':'idle',up?['flower']:['cap'])}</div>
+   <div class="ob-line">${up?'用邮箱注册，全家一起记':'欢迎回来！'}</div>
+   <div class="segbig">${[['in','登录'],['up','注册']].map(x=>`<button class="${O.auth===x[0]?'on':''}" onclick="OBX.authMode('${x[0]}')">${x[1]}</button>`).join('')}</div>
+   <div class="card">
+    <div class="fl">邮箱</div>
+    ${inp('obEmail','email','name@example.com',{type:'email',attr:'inputmode="email" autocomplete="email" autocapitalize="off"',err:e.email,enter:"OBX.submit()"})}
+    ${errLine(e.email)}
+    <div class="fl ob-mt">${up?'设置密码':'密码'}</div>
+    ${inp('obPw','pw','至少 6 位',{type:'password',attr:`autocomplete="${up?'new-password':'current-password'}"`,err:e.pw,enter:"OBX.submit()"})}
+    ${errLine(e.pw)}
+    ${up?agreeRow()+`<div class="note-s">注册后会收到一封验证邮件，点开链接就能登录</div>`
+      :`<div class="ob-row"><span class="note-s" style="margin:0">登录后记录自动同步给家人</span><button class="ob-forgot" onclick="OBX.to('forgot')">忘记密码？</button></div>`}
+   </div>
+   <button class="btn go ${up&&!O.agree?'off':''}" onclick="OBX.submit()">${up?ic.sparkle(22):ic.user(22)}<span>${O.busy?'请稍候…':up?'注册':'登录'}</span></button>
+   ${demoNote('登录时密码填 <b>000000</b> 看「密码不对」；注册时邮箱填 <b>used@test.com</b> 看「已注册」',`<button class="ob-fill" onclick="OBX.fill()">一键填入演示账号</button>`)}`,{back:"OBX.to('welcome')"});
+}
+/* 2c 验证邮件 */
+function sVerify(){
+  return page('ob-green','验证邮箱',`
+   <div class="ob-hs">${tuan('happy',['book'])}</div>
+   <div class="ob-line">验证邮件已发到<br><span class="ob-mail">${esc(mail())}</span></div>
+   <div class="card">
+    <div class="ob-step"><b>1</b><span>打开邮箱，找到「团子育儿本」发来的邮件</span></div>
+    <div class="ob-step"><b>2</b><span>点邮件里的「验证邮箱」链接</span></div>
+    <div class="ob-step"><b>3</b><span>回到这里，用邮箱和密码登录</span></div>
+    <div class="note-s">没找到？看看垃圾邮件箱，或者等 1 分钟再重新发送</div>
+   </div>
+   <button class="btn go" onclick="OBX.verified()">${ic.check(22)}<span>我已验证，去登录</span></button>
+   <button class="ob-resend" id="obResend" onclick="OBX.resend()">${resendTxt()}</button>
+   <button class="ob-resend" style="margin-top:6px" onclick="OBX.authMode('up')"><u>邮箱填错了，换一个</u></button>`,{back:"OBX.authMode('up')"});
+}
+const resendTxt=()=>O.cd>0?`<span>${O.cd} 秒后可以重新发送</span>`:'<u>没收到？重新发送</u>';
+/* 2d / 2e 忘记密码 */
+function sForgot(){
+  if(O.scr==='forgot-sent')return page('ob-blue','找回密码',`
+   ${banner({tone:'ok',icon:ic.check(16),t:'重置邮件已发送',s:`发到 <b>${esc(mail())}</b>，点邮件里的链接设置新密码，1 小时内有效`})}
+   <div class="ob-hs">${tuan('happy',['book'])}</div>
+   <div class="ob-line">去邮箱看看吧～</div>
+   <div class="card">
+    <div class="ob-step"><b>1</b><span>打开邮件，点「重置密码」</span></div>
+    <div class="ob-step"><b>2</b><span>App 会自动打开「设置新密码」</span></div>
+    <div class="ob-step"><b>3</b><span>设好后用新密码登录</span></div>
+   </div>
+   <button class="btn go" onclick="OBX.backLogin()">${ic.user(22)}<span>回到登录</span></button>
+   <button class="ob-resend" onclick="OBX.to('setpw')"><u>（演示）模拟点开邮件里的链接 →</u></button>`,{back:"OBX.backLogin()"});
+  return page('ob-blue','找回密码',`
+   <div class="ob-hs">${tuan('worry',['cap'])}</div>
+   <div class="ob-line">别着急，用注册邮箱重置一下</div>
+   <div class="card">
+    <div class="fl">注册时用的邮箱</div>
+    ${inp('obEmail','email','name@example.com',{type:'email',attr:'inputmode="email" autocapitalize="off"',err:O.err.email,enter:"OBX.sendReset()"})}
+    ${errLine(O.err.email)}
+    <div class="note-s">我们会发一封重置邮件，点里面的链接就能设置新密码</div>
+   </div>
+   <button class="btn go" onclick="OBX.sendReset()">${ic.mail(22)}<span>${O.busy?'请稍候…':'发送重置邮件'}</span></button>`,{back:"OBX.backLogin()"});
+}
+/* 2f 设置新密码（邮件链接打开 / 我的 › 修改密码 共用） */
+function sSetpw(){
+  const me=O.setpwFrom==='me',e=O.err;
+  return page('ob-blue',me?'修改密码':'设置新密码',`
+   <div class="ob-hs">${tuan('idle',['cap'])}</div>
+   <div class="ob-line">${me?'换一个新密码，下次用它登录':'设置一个新密码，记牢哦'}</div>
+   <div class="card">
+    <div class="fl">新密码</div>
+    ${inp('obPw','pw','至少 6 位',{type:'password',attr:'autocomplete="new-password"',err:e.pw,val:O.pw})}
+    ${errLine(e.pw)}
+    <div class="fl ob-mt">再输一次</div>
+    ${inp('obPw2','pw2','和上面一样',{type:'password',attr:'autocomplete="new-password"',err:e.pw2,enter:"OBX.savePw()"})}
+    ${errLine(e.pw2)}
+    ${me?'<div class="note-s">改好后，其他设备需要用新密码重新登录</div>':''}
+   </div>
+   <button class="btn go" onclick="OBX.savePw()">${ic.check(22)}<span>保存新密码</span></button>`,{back:me?"OBX.toMe()":"OBX.backLogin()"});
+}
+/* 备选：手机号 + 验证码（不在主流程） */
+function sPhone(){
+  return page('ob-blue','登录 / 注册',`
+   ${banner({icon:ic.sparkle(16),t:'设计备选 · 当前版本不上线',s:'上线手机号登录时，用这个表单替换邮箱表单；自定义短信签名需要个体户 / 公司资质'})}
+   <div class="ob-hs">${tuan('idle',['cap'])}</div>
+   <div class="ob-line">手机号登录，没注册过会自动注册</div>
+   <div class="card">
+    <div class="fl">手机号</div>
+    <label class="inp"><span class="pre">+86</span><input type="tel" maxlength="11" placeholder="138 0000 0000" inputmode="numeric"></label>
+    <div class="fl ob-mt">验证码</div>
+    <label class="inp"><input inputmode="numeric" maxlength="6" placeholder="6 位验证码"><button class="get" id="obSms" onclick="event.preventDefault();OBX.sms()">获取验证码</button></label>
+    ${agreeRow()}
+   </div>
+   <button class="btn go ${O.agree?'':'off'}" onclick="toast('备选方案演示：验证码登录')">${ic.user(22)}<span>登录</span></button>
+   <button class="ob-resend" onclick="OBX.authMode('in')"><u>用邮箱登录</u></button>`,{back:"OBX.authMode('in')"});
+}
+
+/* ---------- 3 选择页 / 加入家庭 ---------- */
+function sChoose(){
+  return page('ob-green','欢迎加入',`
+   ${banner({tone:'ok',icon:ic.check(16),t:`已登录 ${esc(mail())}`,s:'还没有加入任何家庭，选一个开始吧'})}
+   <div class="ob-hs">${tuan('shy',['flower'])}</div>
+   <div class="ob-line">你是家里第一个用团子的吗？</div>
+   <button class="ob-choice" style="--k:var(--pink-s)" onclick="OBX.to('profile')"><span class="m">${ic.baby(62)}</span><span class="main"><span class="t">新建宝宝</span><span class="s">我是家里第一个，来添加宝宝资料</span><span class="tg2" style="--k:var(--yellow)">创建我们家</span></span>${ic.chev(18)}</button>
+   <button class="ob-choice" style="--k:var(--orange-s)" onclick="OBX.to('join')"><span class="m">${tuan('happy',['flower'])}</span><span class="main"><span class="t">我有邀请码</span><span class="s">家人已经在用了，输入 6 位码加入</span><span class="tg2" style="--k:var(--orange)">加入家庭</span></span>${ic.chev(18)}</button>
+   <div class="ob-mini" style="margin-top:18px">邀请码在家人的「我的 › 邀请家人」里生成</div>`,{back:"OBX.signOutToAuth()"});
+}
+const codeBoxes=c=>Array.from({length:6},(_,i)=>`<span class="${i===c.length?'cur':''}">${esc(c[i]||'')}</span>`).join('');
+function sJoin(){
+  const c=O.code,e=O.err;
+  return page('ob-orange','加入家庭',`
+   ${e.code?banner({tone:'err',icon:ic.warn(16),t:e.code,s:'请家人在「我的 › 邀请家人」里点「换一个」，把新码发给你'}):banner({t:'向家人要一个 6 位邀请码',s:'48 小时内有效，只能用一次'})}
+   <div class="ob-hs">${tuan('listen',['cap'],'listen')}</div>
+   <div class="ob-line">输入邀请码，一起记宝宝</div>
+   <div class="card">
+    <div class="fl">邀请码</div>
+    <div class="ob-code big ${e.code?'err':''}" id="obCode">${codeBoxes(c)}<input id="obCodeIn" maxlength="8" autocomplete="off" autocapitalize="characters" spellcheck="false" value="${esc(c)}" oninput="OBX.codeIn(this)" onkeydown="if(event.key==='Enter')OBX.join()" aria-label="邀请码"></div>
+    <div class="fl ob-mt">你是宝宝的？</div>
+    ${rolePicker('joinRole','joinOther')}
+    <div class="note-s">家人看到的记录会显示「${esc(O.joinRole==='其他'?(O.joinOther||'家人'):O.joinRole)}记」</div>
+   </div>
+   <button class="btn go ${c.length<6?'off':''}" id="obJoinBtn" onclick="OBX.join()">${ic.family(22)}<span>${O.busy?'请稍候…':'加入家庭'}</span></button>
+   ${demoNote('输入任意 6 位都能加入；输入 <b>AAAAAA</b> 看「邀请码不对」',`<button class="ob-fill" onclick="OBX.fillCode('7K2QMB')">填入 7K2QMB</button><button class="ob-fill" onclick="OBX.fillCode('AAAAAA')">填入 AAAAAA</button>`)}`,{back:"OBX.to('choose')"});
+}
+function sJoinOk(){
+  const me=O.joinRole==='其他'?(O.joinOther||'家人'):O.joinRole;
+  return page('ob-green','加入成功',`
+   <div class="ob-hs" style="margin-top:6px">${tuan('happy',['flower'],'jump')}</div>
+   <div class="ob-line">欢迎加入「豆米家」！</div>
+   <div class="card">
+    <div class="ob-baby"><div class="avatar">${ic.baby(46)}</div><div><div class="n">豆米</div><div class="s">女宝 · 7 个月 3 天 · 已有 126 条记录</div></div></div>
+    <div class="fl ob-mt">家里的人</div>
+    <div class="hpills" style="margin:0">${[['妈','妈妈 · 管理员','var(--pink)'],[me.slice(0,1),`${me}（我）· 可记录`,'var(--blue)'],['奶','奶奶 · 可记录','var(--orange)']].map(x=>`<span style="background:var(--card)"><b style="width:20px;height:20px;border-radius:50%;border:1.5px solid var(--ink);background:${x[2]};display:grid;place-items:center;font-family:var(--fh);font-weight:400;font-size:11px">${esc(x[0])}</b>${esc(x[1])}</span>`).join('')}</div>
+    <div class="note-s">你在家里是「${esc(me)}」· 记录会自动同步，每条都会显示是谁记的</div>
+   </div>
+   <button class="btn go" onclick="OBX.enter('joined');toast('家人的记录已经同步过来啦')">${ic.home(22)}<span>去看看豆米</span></button>`,{noBar:true});
+}
+
+/* ---------- 4 宝宝资料 ---------- */
+function sProfile(){
+  const b=O.baby,e=O.err,age=ageOf(b.bd);
+  const seg=(arr,key)=>`<div class="seg">${arr.map(x=>`<button class="${b[key]===x[0]?'on':''}" onclick="OBX.bset('${key}','${x[0]}',1)">${x[1]}</button>`).join('')}</div>`;
+  return page('ob-pink','宝宝资料',`
+   <div class="ob-hs">${tuan('happy',['flower'])}</div>
+   <div class="ob-line">先认识一下宝宝吧～</div>
+   <div class="card">
+    <div class="fl">宝宝昵称</div>
+    <label class="inp ${e.name?'err':''}"><input id="obName" maxlength="12" placeholder="比如：糯米、小葡萄" value="${esc(b.name)}" oninput="OBX.bset('name',this.value)"></label>
+    ${errLine(e.name)}
+    <div class="fl ob-mt">生日</div>
+    <label class="inp ${e.bd?'err':''}"><input id="obBd" type="date" min="2020-01-01" max="2026-10-31" value="${esc(b.bd)}" onchange="OBX.bset('bd',this.value,1)"></label>
+    ${e.bd?errLine(e.bd):`<div class="note-s">${age?`今天 ${age}`:'选一下宝宝的出生日期'}</div>`}
+    <div class="fl ob-mt">性别</div>
+    ${seg([['girl','女宝'],['boy','男宝']],'gender')}
+    <div class="fl ob-mt">头像</div>
+    <div class="ob-avs">${AVS.map(a=>`<button class="ob-av ${b.avatar===a[0]?'on':''}" onclick="OBX.bset('avatar','${a[0]}',1)"><span class="w">${babyAv(a[0],40)}</span>${a[1]}</button>`).join('')}</div>
+    <div class="fl ob-mt">喂养方式</div>
+    ${seg(FEEDS,'feeding')}
+    <div class="note-s">记喂奶时默认用这个，随时可以改</div>
+   </div>
+   <div class="card" style="margin-top:14px">
+    <div class="fl">你是宝宝的？</div>
+    ${rolePicker('role','roleOther')}
+    <div class="note-s">家人看到的记录会显示「${esc(meName())}记」</div>
+   </div>
+   <button class="btn go" onclick="OBX.saveBaby()">${ic.check(22)}<span>开始记录</span></button>
+   <div class="ob-mini">宝宝资料只给你邀请的家人看，随时可以在「我的」里改</div>`,{back:"OBX.to('choose')"});
+}
+
+const SCR={welcome:sWelcome,auth:sAuth,verify:sVerify,forgot:sForgot,'forgot-sent':sForgot,setpw:sSetpw,phone:sPhone,choose:sChoose,join:sJoin,'join-ok':sJoinOk,profile:sProfile};
+function render(){
+  const old=ov.querySelector('.full'),keep=old&&lastScr===O.scr?old.scrollTop:0;
+  ov.className='on';ov.innerHTML=SCR[O.scr]();
+  const nf=ov.querySelector('.full');if(nf)nf.scrollTop=keep;
+}
+
+/* ---------- 5 空首页 ---------- */
+function renderHomeFresh(){
+  const b=O.baby,n=S.night,cnt=S.events.length,nm=esc(b.name);
+  const evs=[...S.events].sort((a,c)=>tm(c.start)-tm(a.start)||a.id-c.id);
+  const greet=n?`夜深啦，小声说一句就好，<b>团团</b>陪你守夜～`:cnt?`记得真棒！今天记了 <b>${cnt}</b> 条，接着说就好～`:`你好呀！我是<b>团团</b>，以后${nm}的吃睡拉都交给我记～`;
+  $('#p-home').innerHTML=`
+  <div class="hdr">
+    <div class="avatar">${babyAv(b.avatar,46)}</div>
+    <div class="who"><div class="name">${nm}</div><div class="age">${ageOf(b.bd)} · 周六</div></div>
+    <button class="lvl" id="lvlBadge" onclick="openGrowth()"><span class="mini">${tuan('happy',lvAcc())}</span><span class="t">团团 Lv.${S.lvl}<div class="bar"><i style="width:${S.xp/S.xpMax*100}%"></i></div></span></button>
+    <button class="iconbtn" onclick="toggleNight()" title="夜间模式">${n?ic.sun(22):ic.moon(22)}</button>
+  </div>
+  <div class="greet"><div class="bub">${greet}</div></div>
+  <div class="pred ob-pred">
+    <span class="lab">${ic.clock(14)} 下一顿预测</span>
+    <div class="big h">记满 <span class="num">3</span> 天<br>团团就会算</div>
+    <div class="win">${cnt?'今天开了个好头，明天接着记':'先记几次喂奶和睡觉吧'}</div>
+    <div class="ob-dots"><i class="${cnt?'on':''}"></i><i></i><i></i><span>${cnt?1:0}/3 天</span></div>
+    <div class="basis">依据：${nm}自己的喂奶间隔 · 仅供参考，按需喂养优先</div>
+    <div class="mascot">${tuan(n?'drowsy':'idle',n?['clock','cap']:['clock'])}</div>
+  </div>
+  <div class="sec-t"><h3>今天</h3><button class="editc" onclick="openCardEditor()">${ic.pen(13)} 编辑卡片</button></div>
+  ${homeCards()}
+  ${O.nudge?`<div class="growcard ob-nudge"><span class="ic">${ic.family(26)}</span><div style="flex:1;min-width:0"><div class="h" style="font-size:18px">邀请家人一起记</div><div style="font-size:11.5px;font-weight:800;color:var(--sub);margin-top:2px">爸爸、奶奶也能记，记录自动同步</div></div><button class="go2" onclick="OBX.invite()">去邀请</button><button class="x" onclick="OBX.hideNudge()" aria-label="不再提示">${ic.x(12)}</button></div>`:''}
+  <div class="sec-t" id="tlTitle"><h3>今日时间线</h3><span class="chip-demo">${cnt} 条记录</span></div>
+  ${cnt?`<div class="tl">${evs.map(e=>`
+    <div class="ti ${e.type} ${S.newIds.includes(e.id)?'new drop':''} ${(S.hlIds||[]).includes(e.id)?'new':''}" data-id="${e.id}">
+      <div class="rail"><div class="dot">${typeIc[e.type](24)}</div></div>
+      <div class="body"><div class="main"><div class="ttl">${evTitle(e)}</div><div class="meta">${evMeta(e)}</div></div><div class="time">${e.start}</div></div>
+    </div>`).join('')}</div>`
+   :`<div class="ob-empty"><div class="m">${tuan('sleep',['cap'])}</div><div><b>还没有记录哦</b>按住下面的团团说一句话，<br>或者点卡片上的「+」手动记一笔</div></div>`}
+  <div class="foot-note">${cnt?'点上面的卡片，看近 7 天、30 天的趋势～':'记录只同步给你邀请的家人'}</div>`;
+}
+function guide(){
+  const on=O.mode==='fresh'&&O.guide&&S.tab==='home';
+  document.body.classList.toggle('ob-guide',on);
+  let g=$('#obGuide');
+  if(!on){if(g)g.remove();return}
+  if(!g){g=document.createElement('div');g.id='obGuide';$('#screen').appendChild(g)}
+  g.innerHTML=`<div class="h">按住我，说一句<br><b>“刚喝了 120 毫升奶”</b>试试</div><div class="s">鼠标长按底部的团团 · <u onclick="OBX.skipGuide()">我先自己看看</u></div>`;
+}
+function demoBar(){
+  let el=$('#obDemoBar');
+  if(O.mode!=='demo'){if(el)el.remove();return}
+  if(!el){el=document.createElement('div');el.id='obDemoBar';$('#screen').appendChild(el)}
+  el.innerHTML=`<span class="m">${tuan('happy',S.night?['cap']:['sprout'])}</span><div class="tx"><div class="t">这是示例宝宝豆米 · 只能看不能改</div></div><button class="pillbtn" onclick="OBX.leaveDemo()">开始记我家宝宝</button>`;
+}
+function demoNudge(){
+  toast('示例里只能看哦 · 点上方「开始记我家宝宝」');
+  const el=$('#obDemoBar');if(el){el.style.animation='none';el.offsetWidth;el.style.animation='wig .5s'}
+}
+
+/* ---------- sheet（在流程页之上） ---------- */
+function sheet(html){sh.className='ov sheet-ov on';sh.innerHTML=`<div class="sheet"><div class="grab"></div>${html}</div>`;sh.onclick=e=>{if(e.target===sh)closeSh()}}
+function closeSh(){sh.className='ov sheet-ov';sh.innerHTML='';sh.onclick=null}
+let okFn=null;
+function confirmSheet(o){
+  okFn=o.onOk;
+  sheet(`<div class="heard"><div class="m">${tuan(o.mood||'shy',lvAcc())}</div><div class="q"><div class="t">${o.t}</div><div class="s">${o.sub}</div></div></div>
+   ${o.note?`<div class="tipline ob-tip">${ic.warn(16)} ${o.note}</div>`:''}
+   <div class="actions"><button class="btn" onclick="OBX.closeSheet()"><span>取消</span></button><button class="btn pink" onclick="OBX.ok()"><span>${o.ok}</span></button></div>`);
+}
+function firstSheet(){
+  const nm=esc(O.baby.name);
+  sheet(`<div class="heard"><div class="m">${tuan('happy',lvAcc(),'jump')}</div><div class="q"><div class="t">第一条记录完成！</div><div class="s">${nm}的成长日记开始啦</div></div></div>
+   <div class="hcard" style="margin-top:14px">
+    <div class="vx done"><span class="vc">${ic.check(14)}</span><div class="hb"><div class="t">说一句话就能记</div><div class="s">以后每次喂奶、睡觉、换尿布，按住团团说一句</div></div></div>
+    <div class="vx"><span class="vc">${ic.clock(14)}</span><div class="hb"><div class="t">记满 3 天 · 解锁作息预测</div><div class="s">团团会算出下一顿、下次小睡大概几点</div></div></div>
+    <div class="vx"><span class="vc">${ic.family(14)}</span><div class="hb"><div class="t">邀请家人 · 一起记</div><div class="s">爸爸、奶奶记的也会出现在时间线里</div></div></div>
+   </div>
+   <div class="actions"><button class="btn" onclick="OBX.closeSheet()"><span>继续记</span></button><button class="btn pri" onclick="OBX.invite()">${ic.family(20)}<span>邀请家人</span></button></div>`);
+}
+function invite(){
+  if(O.mode==='demo')return demoNudge();
+  sheet(`<div class="heard"><div class="m">${tuan('happy',lvAcc())}</div><div class="q"><div class="t">邀请家人</div><div class="s">把邀请码发给爸爸、奶奶，一起记</div></div></div>
+   <div class="note-desc" style="flex-direction:column;gap:0;text-align:center;margin-top:14px"><div style="font-size:12px;color:var(--sub)">邀请码</div><div class="ob-code" style="margin:10px 0">${'7K2QMB'.split('').map(c=>`<span>${c}</span>`).join('')}</div><div style="font-size:11.5px;color:var(--sub)">11月2日 10:20 前有效（48 小时）· 只能用一次</div></div>
+   <div class="actions"><button class="btn" onclick="OBX.closeSheet()"><span>关闭</span></button><button class="btn" onclick="toast('换了一个新的邀请码')"><span>换一个</span></button><button class="btn pri" onclick="OBX.closeSheet();toast('邀请文字已复制，发给家人吧')">${ic.share(20)}<span>分享</span></button></div>
+   <div class="autosave">家人加入后，每条记录都会显示是谁记的</div>`);
+}
+function policy(kind){
+  sheet(`<div class="heard"><div class="m">${tuan('idle',['book'])}</div><div class="q"><div class="t">${kind==='terms'?'用户协议':'隐私政策'}</div><div class="s">草案 · 待法务审核</div></div></div>
+   <div class="ob-pol">${POLICY.map(t=>`<p>${esc(t)}</p>`).join('')}</div>
+   <div class="actions"><button class="btn pri" onclick="OBX.closeSheet()"><span>我知道了</span></button></div>`);
+}
+
+/* ---------- 7 我的（已登录 / 示例） ---------- */
+function meHTML(){
+  if(O.mode==='demo')return `
+  <div class="ptitle">我的</div>
+  <div class="profile"><div class="blob-bg" style="width:140px;height:140px;right:-40px;top:-50px"></div><div class="avatar">${ic.baby(58)}</div><div><div class="n">豆米 <span class="ob-tag">示例</span></div><div class="s">女宝 · 2026-03-28 出生 · 7 个月 3 天<br>默认喂养：奶粉</div></div></div>
+  <button class="ob-cta" onclick="OBX.leaveDemo()"><span class="m">${tuan('happy',['flower'])}</span><div style="flex:1"><div class="h" style="font-size:20px">开始记我家宝宝</div><div style="font-size:11.5px;font-weight:800;opacity:.8;margin-top:2px">注册一个账号，全家一起记<br>示例数据不会带过去</div></div>${ic.chev(18)}</button>
+  <div class="list">
+    <button class="li" onclick="goHealth('top')"><div class="ic" style="background:var(--temp)">${ic.medbook(22)}</div><div class="main"><div class="t">健康档案</div><div class="s">看看示例里的体温、用药、疫苗体检</div></div>${ic.chev(16)}</button>
+    <button class="li" onclick="openSummary()"><div class="ic" style="background:var(--yellow)">${ic.doc(22)}</div><div class="main"><div class="t">一键摘要</div><div class="s">给医生 / 给奶奶的小便签</div></div>${ic.chev(16)}</button>
+    <div class="li"><div class="ic" style="background:#9C8BE0">${ic.moon(22)}</div><div class="main"><div class="t">夜间模式</div><div class="s">暖光低亮，团团戴睡帽陪你守夜</div></div><button class="toggle ${S.night?'on':''}" onclick="toggleNight()"><i></i></button></div>
+  </div>
+  <div class="foot-note">示例模式 · 所有数据为虚构演示数据，不会保存</div>`;
+  const b=BB(),joined=O.mode==='joined',me=meName();
+  const mem=joined?[['妈妈','管理员','var(--pink)'],[me,'可记录','var(--blue)',1],['奶奶','可记录','var(--orange)']]:[[me,'管理员','var(--pink)',1]];
+  const feed=(FEEDS.find(f=>f[0]===b.feeding)||FEEDS[0])[1];
+  return `
+  <div class="ptitle">我的</div>
+  <div class="profile" onclick="toast('编辑宝宝资料：沿用「宝宝资料」表单')" style="cursor:pointer"><div class="blob-bg" style="width:140px;height:140px;right:-40px;top:-50px"></div><div class="avatar">${babyAv(b.avatar,58)}</div><div><div class="n">${esc(b.name)}</div><div class="s">${b.gender==='girl'?'女宝':'男宝'} · ${esc(b.bd)} 出生 · ${ageOf(b.bd)}<br>默认喂养：${feed}</div></div></div>
+  <button class="growcard" onclick="openGrowth()"><div class="m">${tuan('happy',lvAcc())}</div><div style="flex:1"><div class="h" style="font-size:19px">团团 <span class="num" style="font-size:16px">Lv.${S.lvl}</span> · ${LVN[S.lvl]}</div><div class="pbar" style="height:16px;margin:7px 0 4px"><i style="width:${S.xp/S.xpMax*100}%"></i></div><div style="font-size:11.5px;font-weight:800;color:var(--sub)">再记 ${S.xpMax-S.xp} 条升到 Lv.${Math.min(5,S.lvl+1)}</div></div>${ic.chev(18)}</button>
+  <div class="list">
+    <button class="li" onclick="goHealth('top')"><div class="ic" style="background:var(--temp)">${ic.medbook(22)}</div><div class="main"><div class="t">健康档案</div><div class="s">体温 · 用药 · 就诊 · 疫苗体检</div></div>${ic.chev(16)}</button>
+    <button class="li" onclick="goHealth('rem')"><div class="ic" style="background:var(--med)">${ic.clock(22)}</div><div class="main"><div class="t">提醒事项</div><div class="s">用药 · 复诊 · 疫苗 · 体检</div></div><span class="free" style="background:var(--yellow)">${S.reminders.filter(r=>!r.done).length} 项待办</span></button>
+    <button class="li" onclick="openSummary()"><div class="ic" style="background:var(--yellow)">${ic.doc(22)}</div><div class="main"><div class="t">一键摘要</div><div class="s">给医生 / 给奶奶的小便签</div></div>${ic.chev(16)}</button>
+  </div>
+  <div class="hgroup">家庭成员 <span class="ok">已同步</span><span class="mini2">${joined?'豆米家':'我们家'} · ${mem.length} 人</span></div>
+  <div class="list">
+    ${mem.map(m=>`<div class="li"><div class="ic" style="background:${m[2]}"><span class="h" style="font-size:15px">${esc(m[0].slice(0,1))}</span></div><div class="main"><div class="t">${esc(m[0])}${m[3]?'（我）':''}</div><div class="s">${m[1]} · 记录会显示「${esc(m[0])}记」</div></div></div>`).join('')}
+    <button class="li" onclick="OBX.invite()"><div class="ic" style="background:var(--blue)">${ic.family(22)}</div><div class="main"><div class="t">邀请家人</div><div class="s">生成 6 位邀请码 · 48 小时有效</div></div>${ic.chev(16)}</button>
+  </div>
+  <div class="list">
+    <button class="li" onclick="toast('演示：已导出 CSV 和 JSON，包含全部记录和修改历史')"><div class="ic" style="background:var(--green)">${ic.down(22)}</div><div class="main"><div class="t">数据导出</div><div class="s">CSV / JSON · 不限次数</div></div><span class="free">永久免费</span></button>
+    <div class="li"><div class="ic" style="background:#9C8BE0">${ic.moon(22)}</div><div class="main"><div class="t">夜间模式</div><div class="s">暖光低亮，团团戴睡帽陪你守夜</div></div><button class="toggle ${S.night?'on':''}" onclick="toggleNight()"><i></i></button></div>
+    <button class="li" onclick="OBX.policy('privacy')"><div class="ic" style="background:var(--blue)">${ic.shield(22)}</div><div class="main"><div class="t">隐私政策与用户协议</div><div class="s">录音不保存 · 不用于广告和训练</div></div>${ic.chev(16)}</button>
+  </div>
+  <div class="hgroup">账号</div>
+  <div class="list">
+    <div class="li"><div class="ic" style="background:var(--blue-s)">${ic.mail(22)}</div><div class="main"><div class="t" style="overflow:hidden;text-overflow:ellipsis">${esc(mail())}</div><div class="s">邮箱登录 · 已验证</div></div><span class="free sync">已登录</span></div>
+    <button class="li" onclick="OBX.changePw()"><div class="ic" style="background:var(--yellow-s)">${ic.lockk(22)}</div><div class="main"><div class="t">修改密码</div><div class="s">改完下次用新密码登录</div></div>${ic.chev(16)}</button>
+    <button class="li" onclick="OBX.askLogout()"><div class="ic" style="background:var(--bg2)">${ic.logout(22)}</div><div class="main"><div class="t">退出登录</div><div class="s">记录都在云端，换手机登录还在</div></div>${ic.chev(16)}</button>
+    <button class="li" onclick="OBX.askDelete()"><div class="ic" style="background:var(--pink-s)">${ic.trash(22)}</div><div class="main"><div class="t dang">注销账号</div><div class="s">删除账号；只有你一个人的家庭会一起删除</div></div>${ic.chev(16)}</button>
+  </div>
+  <div class="foot-note">团子育儿本 v1.0 · 已登录<br>团团不做诊断，不推荐用药剂量</div>`;
+}
+
+/* ---------- 健康 / 问团子：新家庭的空状态 ---------- */
+function healthFresh(){
+  const b=O.baby,nm=esc(b.name);
+  const emp=(mood,acc,t,s)=>`<div class="ob-empty" style="border:0;background:none;padding:2px 0"><div class="m" style="width:56px;height:56px">${tuan(mood,acc)}</div><div><b>${t}</b>${s}</div></div>`;
+  $('#p-health').innerHTML=`<div class="hhead"><div><div class="ptitle">健康</div><div class="psub">${nm} · ${ageOf(b.bd)} · 只记你说的，不判断病情</div></div></div>
+   <div class="sugg"><div class="sh"><span class="av">${tuan('happy',['chart',...(S.night?['cap']:[])])}</span><div class="bub"><div class="t">团团建议</div><div class="s">记几天以后，团团会翻翻记录提醒你</div></div></div><div class="sgfoot">只根据你记下的内容整理 · 不做医疗判断，不给剂量和饮水量建议</div></div>
+   <div class="hgroup">提醒 <span class="mini2">0 项待办</span></div>
+   <div class="hcard">${emp('idle',['clock'],'还没有提醒','按住团子说「明天下午三点提醒我喂药」「下周二打疫苗」就能新建')}</div>
+   <div class="hgroup">病程记录</div>
+   <div class="hcard">${emp('idle',['thermo'],'还没有体温和用药记录','宝宝不舒服时说一句「38度5」，就会记到这里')}</div>
+   <div class="hgroup">疫苗 · 体检</div>
+   <div class="hcard">${emp('happy',['book'],'从接种本添加','按住团子说「下周二打疫苗」，团团帮你记着')}</div>
+   <div class="foot-note">健康页只记录你说的内容，团团不判断病情、不建议剂量</div>`;
+}
+
+/* ---------- 包装原型里的函数（只在 #onboarding 模式生效） ---------- */
+const _renderHome=renderHome,_renderMe=renderMe,_renderHealth=renderHealth,_renderAI=renderAI,_answer=answerHTML,_go=go,_parse=parse,_commit=commit,_cele=celebrate;
+renderHome=function(){if(O.mode==='fresh')return renderHomeFresh();return _renderHome()};
+renderMe=function(){if(O.mode==='flow')return _renderMe();$('#p-me').innerHTML=meHTML()};
+renderHealth=function(k){if(O.mode==='fresh')return healthFresh();return _renderHealth(k)};
+renderAI=function(){
+  if(O.mode!=='fresh')return _renderAI();
+  const nm=esc(O.baby.name);
+  if(!S.chat.length)S.chat.push({who:'bot',html:`<div class="concl">我是团团！</div>以后你问的问题，我都会先翻翻<b>${nm}自己的记录</b>再回答。现在记录还少，先去首页按住我说一句吧～ 发烧、呼吸急促这类紧急情况随时可以问，我会马上提醒你就医。`});
+  _renderAI();
+  $('#p-ai').innerHTML=$('#p-ai').innerHTML.split('豆米').join(nm);
+  const bar=$('#askbar');if(bar){const v=bar.querySelector('input');bar.querySelector('input').placeholder=`问问${O.baby.name}的吃睡情况…`;void v}
+};
+answerHTML=function(k){
+  if(O.mode==='fresh'&&['sleep','feed','night'].includes(k)){const n=S.events.length,nm=esc(O.baby.name);return `<div class="concl">记录还不够，团团先不乱说</div>${nm}现在只有 <b>${n}</b> 条记录。多记几天，我就能用${nm}自己的数据回答你啦～<div class="cite"><span>query_events · ${n} 条</span></div>`}
+  return _answer(k);
+};
+go=function(t){_go(t);guide();nav()};
+parse=function(t){if(t===FIRST_TEXT){const f=O.mode==='fresh'?O.baby.feeding:'formula';return {text:t,events:[{type:'feed',sub:f==='breast'?'bm':f,ml:120,start:fmt(NOW)}]}}return _parse(t)};
+commit=function(){const n=S.events.length;_commit();S.events.slice(n).forEach(e=>{e.by=meName()})};
+celebrate=async function(say,icons,ids,p){
+  const first=O.mode==='fresh'&&!O.first;
+  if(first){O.first=true;O.guide=false;guide();say='第一条记好啦！';p=Object.assign({},p,{toast:'记满 3 天，团团就能预测下一顿啦'})}
+  await _cele(say,icons,ids,p);
+  if(first){S.sample=0;renderSample();nav();setTimeout(firstSheet,600)}
+};
+const block=fn=>function(){if(O.mode==='demo')return demoNudge();return fn.apply(this,arguments)};
+openManual=block(openManual);openCardEditor=block(openCardEditor);toggleRem=block(toggleRem);sgAdd=block(sgAdd);sgGone=block(sgGone);demoRing=block(demoRing);
+$('#screen').addEventListener('pointerdown',e=>{
+  if(O.mode==='demo'&&e.target.closest&&e.target.closest('#mic')){e.stopPropagation();e.preventDefault();const m=$('#mic');m.classList.add('wiggle');setTimeout(()=>m.classList.remove('wiggle'),500);demoNudge()}
+},true);
+
+/* ---------- 进入首页（新家庭 / 加入的家庭 / 示例） ---------- */
+function leaveTabs(){
+  if(O.mode==='flow')return;
+  O.mode='flow';document.body.classList.remove('ob-demo','ob-guide');demoBar();guide();
+  S.events=clone(DEMO0.events);S.reminders=clone(DEMO0.reminders);S.lvl=DEMO0.lvl;S.xp=DEMO0.xp;S.chat=[];S.sample=0;
+}
+function enter(mode){
+  closeSh();lastScr='';ov.className='';ov.innerHTML='';
+  O.mode=mode;O.scr='home';
+  document.body.classList.toggle('ob-demo',mode==='demo');
+  if(mode==='fresh'){S.events=[];S.reminders=[];S.lvl=1;S.xp=0;S.chat=[];S.cards=[...DEF_CARDS];O.first=false;O.guide=true;O.nudge=true;S.sample=FIRST_SAMPLE}
+  else{S.events=clone(DEMO0.events);S.reminders=clone(DEMO0.reminders);S.lvl=DEMO0.lvl;S.xp=DEMO0.xp;S.chat=[];S.sample=0}
+  S.newIds=[];S.hlIds=[];
+  demoBar();go('home');renderAll();guide();nav();
+  $('#p-home').scrollTop=0;
+}
+function to(scr){
+  closeSh();
+  if(scr!=='setpw'||O.setpwFrom!=='me')leaveTabs();
+  if(O.scr!==scr){O.err={};if(scr!=='auth')O.banner=null}
+  O.scr=scr;render();nav();
+}
+
+/* ---------- 流程导航（评审用） ---------- */
+const NAV=[['主流程'],['1','welcome','欢迎页'],['2','auth-up','注册'],['2a','auth-in','登录'],['2b','auth-err','登录 · 密码不对'],['2c','verify','验证邮件已发送'],['2d','forgot','忘记密码'],['2e','forgot-sent','重置邮件已发送'],['2f','setpw','设置新密码'],['3','choose','选择：新建 / 邀请码'],['3a','join','输入邀请码'],['3b','join-ok','加入成功'],['4','profile','宝宝资料'],['5','home','空首页 + 引导'],['5a','home-first','第一条记录后'],['6','demo','示例模式'],['7','me','我的（已登录）'],['7a','me-logout','退出 / 注销确认'],['设计备选'],['alt','phone','手机号 + 验证码']];
+function curId(){
+  if(O.mode==='flow')return O.scr==='auth'?(O.err.pw===true?'auth-err':'auth-'+O.auth):O.scr;
+  if(O.scr==='setpw')return 'setpw';
+  if(O.mode==='demo')return 'demo';
+  if(S.tab==='me')return 'me';
+  if(O.mode==='joined')return 'join-ok';
+  return O.first?'home-first':'home';
+}
+const navList=()=>NAV.map(x=>x.length===1?`<div class="g">${x[0]}</div>`:`<button class="${x[0]==='alt'?'alt':''}" data-id="${x[1]}" onclick="OBX.jump('${x[1]}')"><b>${x[0]}</b>${x[2]}</button>`).join('');
+function nav(){
+  const id=curId();
+  document.querySelectorAll('.ob-navl button').forEach(b=>b.classList.toggle('on',b.dataset.id===id));
+  try{history.replaceState(null,'','#onboarding/'+id)}catch(_){}
+}
+const side=$('.side');
+side.innerHTML=`<div class="logo"><div class="lg" id="sideLogo"></div><div><h1>团子育儿本</h1><div class="tag">首次使用流程 · 可交互原型 v0.5</div></div></div>
+ <p>正式版：先登录再用，另外留一个只读的「先看看示例」。可以在手机里从欢迎页一路点下去，也可以点下面的步骤直接跳。</p>
+ <div class="ob-navl" id="obNavSide">${navList()}</div>
+ <div class="note">演示原型：账号、邮件、邀请码都是模拟的，不会真的发送或保存。去掉地址里的 #onboarding 就回到原来的原型入口。</div>`;
+$('#sideLogo').innerHTML=tuan('happy',lvAcc());
+const nb=document.createElement('button');nb.id='obNavBtn';nb.innerHTML=`${ic.chev(12)}流程导航`;document.body.appendChild(nb);
+const np=document.createElement('div');np.id='obNavPop';np.innerHTML=`<h4>流程导航<button class="ob-fill" onclick="OBX.navPop(false)">收起</button></h4><div class="ob-navl">${navList()}</div>`;document.body.appendChild(np);
+nb.onclick=()=>OBX.navPop(true);
+if(window.__obShot)document.body.classList.add('ob-shot');
+
+/* ---------- 跳页（导航 / 地址 #onboarding/<id>） ---------- */
+function needBaby(){if(!O.baby.name.trim())Object.assign(O.baby,SAMPLE_BABY);if(!O.email.trim())O.email='mama@example.com'}
+function needMail(){if(!O.email.trim())O.email='mama@example.com'}
+function jump(id){
+  closeSh();np.classList.remove('on');O.busy=false;
+  switch(id){
+    case 'welcome':{const n=S.night;leaveTabs();O=blank();S.night=n;to('welcome');break}
+    case 'auth-up':case 'auth-in':O.auth=id.slice(5);O.err={};O.banner=null;O.scr='';to('auth');break;
+    case 'auth-err':O.auth='in';O.email='mama@example.com';O.pw='000000';O.scr='auth';leaveTabs();O.err={pw:true};O.banner={tone:'err',icon:ic.warn(16),t:'邮箱或密码不对',s:'再试一次，或者点「忘记密码？」用邮箱重置'};render();nav();break;
+    case 'forgot':to('forgot');break;
+    case 'verify':case 'forgot-sent':needMail();to(id);break;
+    case 'setpw':O.setpwFrom='forgot';O.pw='';O.pw2='';to('setpw');break;
+    case 'choose':case 'join':case 'profile':needMail();to(id);break;
+    case 'join-ok':needMail();if(O.code.length<6)O.code='7K2QMB';to('join-ok');break;
+    case 'home':needBaby();enter('fresh');break;
+    case 'home-first':{needBaby();enter('fresh');O.first=true;O.guide=false;S.events.push({id:++uid,type:'feed',sub:O.baby.feeding==='breast'?'bm':O.baby.feeding,ml:120,start:fmt(NOW),by:meName(),src:'voice'});S.xp=1;S.sample=0;renderHome();renderTabbar();renderSample();guide();nav();firstSheet();break}
+    case 'demo':enter('demo');break;
+    case 'me':needBaby();if(O.mode!=='fresh'&&O.mode!=='joined')enter('fresh');go('me');break;
+    case 'me-logout':needBaby();if(O.mode!=='fresh'&&O.mode!=='joined')enter('fresh');go('me');OBX.askLogout();break;
+    case 'phone':O.agree=false;to('phone');break;
+    default:to('welcome');
+  }
+  nav();
+}
+let cdT=null;
+window.OBX={
+  fromHash(){const id=(location.hash.split('/')[1]||'welcome');if(id!==curId())jump(id)},
+  jump,enter,to,invite,policy,
+  night(){toggleNight();if(O.mode==='flow')render();demoBar()},
+  set(k,v,re){O[k]=v;if(O.err[k]&&k!=='pw'){}if(re)render()},
+  bset(k,v,re){O.baby[k]=v;if(O.err[k]){delete O.err[k]}if(re)render()},
+  authMode(m){O.auth=m;O.err={};O.banner=null;O.busy=false;if(O.scr!=='auth')lastScr='';to('auth')},
+  agree(){O.agree=!O.agree;render()},
+  fill(){O.email='mama@example.com';O.pw='tuanzi2026';O.agree=true;O.err={};O.banner=null;render()},
+  async submit(){
+    if(O.busy)return;
+    const up=O.auth==='up';O.err={};O.banner=null;
+    if(!okEmail(O.email))O.err.email=O.email.trim()?'邮箱格式不对，像 name@example.com 这样':'先填一下邮箱';
+    if(O.pw.length<6)O.err.pw=O.pw?'密码至少 6 位':'先填一下密码';
+    if(Object.keys(O.err).length){render();toast(O.err.email||O.err.pw);return}
+    if(up&&!O.agree){O.shake=true;render();O.shake=false;toast('请先勾选同意《隐私政策》《用户协议》');return}
+    O.busy=true;render();await sleep(650);O.busy=false;
+    if(up){
+      if(O.email.trim().toLowerCase()==='used@test.com'){O.err.email='这个邮箱已经注册过了，直接登录吧';render();return}
+      O.pw='';to('verify');OBX.resend(true);return;
+    }
+    if(O.pw==='000000'){O.err={pw:true};O.banner={tone:'err',icon:ic.warn(16),t:'邮箱或密码不对',s:'再试一次，或者点「忘记密码？」用邮箱重置'};render();nav();toast('邮箱或密码不对');return}
+    O.pw='';to('choose');toast('登录成功');
+  },
+  resend(silent){if(O.cd>0)return;O.cd=60;if(!silent)toast('验证邮件已重新发送');clearInterval(cdT);cdT=setInterval(()=>{O.cd--;const b=$('#obResend');if(b)b.innerHTML=resendTxt();if(O.cd<=0)clearInterval(cdT)},1000)},
+  verified(){O.auth='in';O.pw='';O.err={};lastScr='';to('auth');O.banner={tone:'ok',icon:ic.check(16),t:'验证好了就登录吧',s:'用刚才注册的邮箱和密码'};render()},
+  backLogin(){O.auth='in';O.err={};O.banner=null;lastScr='';to('auth')},
+  async sendReset(){
+    O.err={};if(!okEmail(O.email)){O.err.email=O.email.trim()?'邮箱格式不对，像 name@example.com 这样':'先填一下邮箱';render();return}
+    O.busy=true;render();await sleep(600);O.busy=false;to('forgot-sent');
+  },
+  savePw(){
+    O.err={};if(O.pw.length<6)O.err.pw=O.pw?'密码至少 6 位':'先填一下新密码';else if(O.pw2!==O.pw)O.err.pw2='两次输入的不一样';
+    if(Object.keys(O.err).length){render();return}
+    O.pw='';O.pw2='';
+    if(O.setpwFrom==='me'){OBX.toMe();toast('密码改好啦');return}
+    O.auth='in';lastScr='';to('auth');O.banner={tone:'ok',icon:ic.check(16),t:'新密码设置好了',s:'用新密码登录吧'};render();
+  },
+  signOutToAuth(){O.auth='in';O.pw='';toast('已退出登录');lastScr='';to('auth')},
+  codeIn(el){
+    const c=el.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6);el.value=c;O.code=c;
+    const box=$('#obCode');box.querySelectorAll('span').forEach((s,i)=>{s.textContent=c[i]||'';s.classList.toggle('cur',i===c.length)});
+    $('#obJoinBtn').classList.toggle('off',c.length<6);
+  },
+  fillCode(c){O.code=c;O.err={};render()},
+  async join(){
+    O.err={};if(O.code.length!==6){O.err.code='邀请码是 6 位字母和数字';render();return}
+    O.busy=true;render();await sleep(650);O.busy=false;
+    if(O.code==='AAAAAA'){O.err.code='邀请码不对，或者已经过期 / 被用过了';render();return}
+    to('join-ok');
+  },
+  saveBaby(){
+    const b=O.baby;O.err={};const d=ymd(b.bd);
+    if(!b.name.trim())O.err.name='给宝宝起个昵称吧';
+    if(!b.bd)O.err.bd='选一下宝宝的生日';else if(!d)O.err.bd='生日格式像 2026-03-28 这样';else if(d>TODAY)O.err.bd='生日不能晚于今天';
+    if(O.role==='其他'&&!O.roleOther.trim())O.err.role='填一下家人怎么称呼你';
+    if(Object.keys(O.err).length){render();const f=ov.querySelector('.inp.err');if(f)f.scrollIntoView({block:'center'});toast(O.err.name||O.err.bd||O.err.role);return}
+    b.name=b.name.trim().slice(0,12);enter('fresh');toast(`欢迎！${b.name}的家建好啦`);
+  },
+  skipGuide(){O.guide=false;guide();renderSample()},
+  hideNudge(){O.nudge=false;renderHome();toast('好的，之后可以在「我的 › 邀请家人」里邀请')},
+  leaveDemo(){O.auth='up';O.err={};O.banner=null;lastScr='';to('auth')},
+  closeSheet:closeSh,
+  ok(){const f=okFn;okFn=null;closeSh();if(f)f()},
+  changePw(){O.setpwFrom='me';O.pw='';O.pw2='';O.err={};lastScr='';O.scr='setpw';render();nav()},
+  toMe(){ov.className='';ov.innerHTML='';lastScr='';O.scr='home';go('me')},
+  askLogout(){confirmSheet({t:'退出登录？',sub:'记录都保存在云端，下次用邮箱和密码登录就能看到',ok:'退出',onOk:()=>{const n=S.night;leaveTabs();O=blank();S.night=n;go('home');to('welcome');toast('已退出登录')}})},
+  askDelete(){confirmSheet({t:'注销账号？',sub:'会删除你的账号和成员身份；只有你一个人的家庭，宝宝资料和记录会一起删除',note:'第 1 步 / 共 2 步 · 和家人共享的家庭会保留记录',ok:'继续',onOk:()=>setTimeout(()=>confirmSheet({t:'真的要注销吗？',mood:'worry',sub:'注销后无法恢复。建议先在「数据导出」里备份一份',note:'第 2 步 / 共 2 步',ok:'确认注销',onOk:()=>{const n=S.night;leaveTabs();O=blank();S.night=n;go('home');to('welcome');toast('账号已注销，数据已删除')}}),250)})},
+  sms(){const b=$('#obSms');if(!b||b.disabled)return;let n=60;b.disabled=true;toast('验证码已发送（演示）');b.textContent=n+' 秒';const t=setInterval(()=>{n--;if(!document.body.contains(b)){clearInterval(t);return}b.textContent=n>0?n+' 秒':'重新获取';if(n<=0){clearInterval(t);b.disabled=false}},1000)},
+  navPop(on){np.classList.toggle('on',on)},
+};
+jump(location.hash.split('/')[1]||'welcome');
+})();
+</script>
 </body></html>
