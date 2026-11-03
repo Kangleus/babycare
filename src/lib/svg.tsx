@@ -4,9 +4,9 @@ import { SvgXml } from 'react-native-svg';
 import { AnimatedTuan } from './mascot';
 import { ic, IconName, Mood, tuan } from './art';
 
-export const Icon = memo(function Icon({ name, size = 22, color, fill }: { name: IconName; size?: number; color?: string; fill?: string }) {
+export const Icon = memo(function Icon({ name, size = 22, color, fill, style }: { name: IconName; size?: number; color?: string; fill?: string; style?: object }) {
   const fn = ic[name] as (s: number, f?: string) => string;
-  return <SvgXml xml={fill ? fn(size, fill) : fn(size)} width={size} height={size} color={color} />;
+  return <SvgXml xml={webXml(fill ? fn(size, fill) : fn(size))} width={size} height={size} color={color} style={style} />;
 });
 
 const USE_NATIVE_MASCOT = Platform.OS !== 'web' || (typeof location !== 'undefined' && /[?&]mascot=native\b/.test(location.search));

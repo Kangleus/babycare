@@ -238,7 +238,7 @@ const s = StyleSheet.create({
 });
 
 /* .full 整页（293-306, 309）：彩色底 + 白色气泡圆 + 顶栏 + 团团 + 卡片 + 大按钮 */
-export function FullPage({ bg, title, onClose, children, testID }: { bg: string; title: string; onClose?: () => void; children: ReactNode; testID?: string }) {
+export function FullPage({ bg, title, onClose, children, testID, closeIcon = 'x', closeLabel = '关闭' }: { bg: string; title: string; onClose?: () => void; children: ReactNode; testID?: string; closeIcon?: IconName; closeLabel?: string }) {
   const { p } = useApp();
   return (
     <View testID={testID} style={[fs.full, { backgroundColor: bg }]}>
@@ -246,7 +246,7 @@ export function FullPage({ bg, title, onClose, children, testID }: { bg: string;
         <View pointerEvents="none" style={[fs.blob, { width: 260, height: 260, right: -90, top: 60 }]} />
         <View pointerEvents="none" style={[fs.blob, { width: 160, height: 160, left: -60, top: 300 }]} />
         <View style={fs.bar}>
-          {onClose ? <Pressable testID="full-close" accessibilityLabel="关闭" onPress={onClose} style={({ pressed }) => [fs.iconbtn, { backgroundColor: p.card, borderColor: p.ink }, pressed ? { transform: [{ translateY: 3 }] } : hard(p, 3)]}><Icon name="x" size={18} /></Pressable> : <View style={{ width: 42 }} />}
+          {onClose ? <Pressable testID="full-close" accessibilityLabel={closeLabel} onPress={onClose} style={({ pressed }) => [fs.iconbtn, { backgroundColor: p.card, borderColor: p.ink }, pressed ? { transform: [{ translateY: 3 }] } : hard(p, 3)]}><Icon name={closeIcon} size={18} style={closeIcon === 'chev' ? { transform: [{ rotate: '180deg' }] } : undefined} /></Pressable> : <View style={{ width: 42 }} />}
           <Txt f="h" size={22}>{title}</Txt>
           <View style={{ width: 42 }} />
         </View>

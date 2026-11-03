@@ -67,7 +67,7 @@ export function authErrorText(e: { message?: string; status?: number; code?: str
   if (c === 'over_email_send_rate_limit' || e.status === 429 || m.includes('rate limit')) return '发送太频繁了，请过一会儿再试（免费邮件服务每小时只能发很少几封）';
   if (c === 'invalid_credentials' || m.includes('invalid login')) return '邮箱或密码不对';
   if (c === 'email_not_confirmed' || m.includes('not confirmed')) return '邮箱还没验证：请先点开验证邮件里的链接';
-  if (c === 'user_already_exists' || m.includes('already registered')) return '这个邮箱已经注册过了，直接登录吧';
+  if (c === 'user_already_exists' || m.includes('already registered')) return '注册请求已收到，请查收验证邮件';
   if (c === 'weak_password' || m.includes('password should')) return '密码至少 6 位';
   if (c === 'email_address_invalid' || m.includes('invalid') && m.includes('email')) return '邮箱格式不对，或这个邮箱暂时不能注册';
   if (c === 'signup_disabled') return '暂未开放注册';
@@ -347,22 +347,46 @@ class CloudSync {
     const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
     if (error) throw new Error(authErrorText(error));
   }
-  /** 注册：返回 'confirm' = 需要去邮箱点验证链接；'ok' = 已直接登录（项目关闭了邮箱验证） */
-  async signUp(email: string, password: string): Promise<'ok' | 'confirm'> {
+  /** 注册：返回 'confirm' = 需要去邮箱点验证链接；'ok' = 已直接登录（项目关闭了邮箱验证）
+      同意记录写进 auth user_metadata（不做表结构变更）。
+      ⚠️ 反枚举：邮箱已注册时 Supabase 返回 identities=[] 且没有 session，
+      这里**不报错**、当作 'confirm' 处理，界面显示「验证邮件已发送」，
+      不暴露这个邮箱是否注册过。 */
+  async signUp(email: string, password: string, consent?: { consentAt: string; policyVersion: string }): Promise<'ok' | 'confirm'> {
     const redirect = Platform.OS === 'web' && typeof window !== 'undefined' ? window.location.origin : 'yijuji://';
-    const { data, error } = await supabase.auth.signUp({ email: email.trim(), password, options: { emailRedirectTo: redirect } });
+    const { data, error } = await supabase.auth.signUp({
+      email: email.trim(), password,
+      options: { emailRedirectTo: redirect, ...(consent ? { data: { consent_at: consent.consentAt, policy_version: consent.policyVersion } } : {}) },
+    });
     if (error) throw new Error(authErrorText(error));
-    if (data.user && data.user.identities && data.user.identities.length === 0) throw new Error('这个邮箱已经注册过了，直接登录吧');
     return data.session ? 'ok' : 'confirm';
+  }
+
+  /** 重新发送验证邮件（60 秒冷却由界面控制） */
+  async resendVerify(email: string) {
+    const { error } = await supabase.auth.resend({ type: 'signup', email: email.trim() });
+    if (error) throw new Error(authErrorText(error));
+  }
+  /** 发送重置密码邮件。原生走深链，Web 回到当前站点。 */
+  async resetPassword(email: string) {
+    const redirect = Platform.OS === 'web' && typeof window !== 'undefined' ? window.location.origin + window.location.pathname : 'yijuji://reset';
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo: redirect });
+    if (error) throw new Error(authErrorText(error));
+  }
+  /** 设置 / 修改密码（重置邮件回来时也用它） */
+  async updatePassword(password: string) {
+    const { error } = await supabase.auth.updateUser({ password });
+    if (error) throw new Error(authErrorText(error));
   }
   async signOut() {
     await this.serial(async () => { await this.unlinkLocal(); this.sessionUser = null; await supabase.auth.signOut({ scope: 'local' }); this.set({ status: 'signedOut', email: null, userId: null }); });
   }
-  createFamily(displayName: string) {
+  /** carryLocal=false：不把本机旧记录带上云（首次使用流程用；这里没有真实老用户） */
+  createFamily(displayName: string, carryLocal = true) {
     return this.serial(async () => {
       const { data, error } = await supabase.rpc('create_family', { p_name: '我们家', p_display_name: displayName });
       if (error) throw new Error(error.message.includes('too many') ? '最多创建 5 个家庭' : authErrorText(error));
-      await this.linkFamily(data as string, displayName, 'admin', '我们家', true);
+      await this.linkFamily(data as string, displayName, 'admin', '我们家', carryLocal);
     });
   }
   async createInvite(): Promise<{ code: string; expiresAt: string }> {
