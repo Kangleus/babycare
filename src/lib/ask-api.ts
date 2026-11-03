@@ -80,3 +80,20 @@ export async function askRemote(question: string, babyId: string, history: { q: 
       : { ok: false, code: 'offline', message: '网络不太好，等会儿再问我' };
   } finally { clearTimeout(t); }
 }
+
+/* 示例模式（只读豆米）的预置回答：不调 Edge Function、不计次、不花钱。
+   内容是写死的，但数字取自示例数据，看起来才像真的在翻记录。 */
+export function demoAnswer(q: string, stats: { feed: number; ml: number; diapers: number; sleepH: number }, name: string): AskAnswer {
+  const t = q.replace(/\s/g, '');
+  const base = { cites: ['示例数据 · 近 7 天'], mood: 'idle' as const };
+  if (/睡|夜醒|小睡/.test(t)) {
+    return { ...base, concl: `${name}最近 7 天每天睡 ${stats.sleepH} 小时左右`, body: `白天小睡 2–3 次、夜里会醒 1–2 次，都是这个月龄常见的。\n\n示例模式只能看不能记，想记自己的宝宝点顶部「开始记我家宝宝」。` };
+  }
+  if (/奶|喂|吃/.test(t)) {
+    return { ...base, concl: `${name}今天喝了 ${stats.feed} 顿、共 ${stats.ml} ml`, body: `最近 7 天的喂奶间隔大约 3 小时，晚上会拉长到 4–5 小时。\n\n这是示例数据，按需喂养优先。` };
+  }
+  if (/拉|便|尿/.test(t)) {
+    return { ...base, concl: `${name}今天换了 ${stats.diapers} 次尿布`, body: '小便清亮、每天 6 次以上一般没问题；大便颜色和性状比次数更值得留意。\n\n这是示例数据。' };
+  }
+  return { ...base, concl: `这是示例宝宝「${name}」的演示数据`, body: `团团在示例模式里只按豆米这 14 天的记录回答，不会联网、也不会调用 AI。\n\n想记自己的宝宝，点顶部「开始记我家宝宝」。` };
+}

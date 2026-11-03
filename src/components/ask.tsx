@@ -6,8 +6,9 @@ import { useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, ScrollViewInstance, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Icon, Tuan } from '@/lib/svg';
 import { useApp } from '@/state/app-state';
-import { askLocalUrgent, askReady, askRemote, localUrgentCard, type AskAnswer, type AskMsg } from '@/lib/ask-api';
+import { askLocalUrgent, askReady, askRemote, demoAnswer, localUrgentCard, type AskAnswer, type AskMsg } from '@/lib/ask-api';
 import { DAY, parseYmd } from '@/lib/time';
+import { dayEvs } from '@/lib/calc';
 import { hard } from '@/theme/tokens';
 import { useTopPad } from './chrome';
 import { Txt } from './txt';
@@ -19,7 +20,7 @@ const DAYS = ['一', '二', '三', '四', '五', '六', '日'];
 
 export function AskPage({ onSummary }: { onSummary: (aud?: 'doctor' | 'granny') => void }) {
   const app = useApp();
-  const { p, baby, records, now, showToast } = app;
+  const { p, baby, records, now, showToast, demo } = app;
   const top = useTopPad();
   const msgs = app.askMsgs;
   const setMsgs = app.setAskMsgs;
@@ -48,6 +49,16 @@ export function AskPage({ onSummary }: { onSummary: (aud?: 'doctor' | 'granny') 
     return out.slice(-3);
   };
 
+  /* 示例模式的统计（不上云，就地算今日） */
+  const demoStats = () => {
+    const evs = dayEvs(records, now);
+    const feeds = evs.filter(e => e.type === 'feed');
+    const ml = feeds.reduce((n, e) => n + (Number(e.rec.values.v) || 0), 0);
+    const diapers = evs.filter(e => e.type === 'diaper').length;
+    const sleepMs = evs.filter(e => e.type === 'sleep').reduce((n, e) => n + Math.max(0, +new Date(e.rec.endTime ?? now) - +new Date(e.rec.time)), 0);
+    return { feed: feeds.length, ml, diapers, sleepH: Math.round(sleepMs / 360000) / 10 };
+  };
+
   const send = async (raw: string) => {
     const q = raw.trim();
     if (!q || sending) return;
@@ -57,6 +68,11 @@ export function AskPage({ onSummary }: { onSummary: (aud?: 'doctor' | 'granny') 
     const local = askLocalUrgent(q, records, now, baby.name, ageDays,
       latestTemp ? { v: Number(latestTemp.values.v), at: +new Date(latestTemp.time) } : undefined);
     if (local) { push({ id: nextId(), who: 'bot', kind: 'urgent', card: local.card }); return; }
+    /* 示例模式：只按演示数据给预置回答，不联调 AI、不计次 */
+    if (demo) {
+      push({ id: nextId(), who: 'bot', kind: 'answer', a: demoAnswer(q, demoStats(), baby.name), fb: false });
+      return;
+    }
     if (!askReady(baby.id)) { push({ id: nextId(), who: 'bot', kind: 'login' }); return; }
     push({ id: nextId(), who: 'bot', kind: 'typing' });
     setSending(true);
