@@ -22,6 +22,7 @@
     "supabase/functions/voice-parse",
     "supabase/functions/_shared/dashscope.ts",
     "node_modules",
-    "supabase/functions/ask-tuanzi"
+    "supabase/functions/ask-tuanzi",
+    "supabase/functions/delete-account"
   ]
 }
