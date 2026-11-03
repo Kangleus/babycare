@@ -1,8 +1,9 @@
 /* 全局状态：启动时从 Repo 读出宝宝 / 记录 / 设置；所有写操作先写 Repo 再更新内存 */
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { getRepo, getLocalStore, DEFAULT_SETTINGS, LOCAL_MEMBER } from '@/data/repo';
+import { setRepo, getRepo, getLocalStore, DEFAULT_SETTINGS, LOCAL_MEMBER } from '@/data/repo';
+import { DemoRepo } from '@/data/demo-repo';
+import { SupabaseRepo } from '@/data/supabase-repo';
 import { cloud } from '@/data/sync';
-import { buildDemo, buildDemoHealth } from '@/data/seed';
 import { EMPTY_HEALTH } from '@/data/local-repo';
 import { router } from 'expo-router';
 import { upcoming, whenText } from '@/lib/health';
@@ -38,7 +39,7 @@ type AppState = {
   saveBaby: (b: Baby) => Promise<void>;
   acceptConsent: () => Promise<void>;
   finishOnboarding: (b: Baby) => Promise<void>;
-  resetDemo: () => Promise<void>;
+  demo: boolean; canWrite: boolean; guardDemo: () => boolean; enterDemo: () => void; exitDemo: () => void;
   clearAll: () => Promise<void>;
   recTarget: RecTarget; openRecord: (kind: Kind, rec?: BabyRecord) => void; closeRecord: () => void;
   trend: Kind | null; openTrend: (k: Kind | null) => void;
@@ -49,7 +50,11 @@ type AppState = {
 const Ctx = createContext<AppState | null>(null);
 
 export function AppStateProvider({ children }: { children: ReactNode }) {
-  const repo = getRepo();
+  /* demo = 只读示例模式：数据来自 DemoRepo（内存），不落盘、不同步、不调 Edge Function */
+  const [demo, setDemo] = useState(false);
+  /* 仓库实例由模式决定：demo = DemoRepo（只读、内存），real = SupabaseRepo（本地优先 + 云端同步） */
+  const repo = useMemo(() => (demo ? new DemoRepo() : new SupabaseRepo()), [demo]);
+  useMemo(() => { setRepo(repo); }, [repo]);
   const [ready, setReady] = useState(false);
   const [baby, setBaby] = useState<Baby | null>(null);
   const [records, setRecords] = useState<BabyRecord[]>([]);
@@ -77,8 +82,15 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   }, [repo]);
   /* 启动时从仓库读一次（异步回调里 setState，订阅外部存储） */
   useEffect(() => { let alive = true; Promise.resolve().then(() => { if (alive) load(); }); return () => { alive = false; }; }, [load]);
-  /* 云端同步：启动同步引擎；家人的新记录 / 成员变化到了就重新读本地副本 */
-  useEffect(() => { cloud.start(getLocalStore()); return cloud.on(e => { if (e === 'data') load(); }); }, [load]);
+  /* 云端同步：启动同步引擎；家人的新记录 / 成员变化到了就重新读本地副本。
+     示例模式绝不起同步引擎——不建会话、不发请求。 */
+  useEffect(() => {
+    if (demo) return;
+    const store = getLocalStore();
+    if (!store) return;
+    cloud.start(store);
+    return cloud.on(e => { if (e === 'data') load(); });
+  }, [load, demo]);
   /* 每 30 秒刷新「现在」，让预测 / 进行中的睡眠走起来 */
   useEffect(() => { const t = setInterval(() => setNow(new Date()), 30000); return () => clearInterval(t); }, []);
 
@@ -93,18 +105,24 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   }, [settings.night, save, showToast]);
 
   const reload = useCallback(async (b: Baby | null) => setRecords(b ? await repo.listRecords(b.id) : []), [repo]);
-  const seed = useCallback(async (b: Baby) => {
-    await repo.replaceRecords(b.id, buildDemo(b.id, new Date())); await repo.replaceHealth(b.id, buildDemoHealth(b, new Date()));
-    await reload(b); setHealth(await repo.getHealth(b.id));
-  }, [repo, reload]);
-  const putHealth = useCallback<AppState['putHealth']>(async (kind, item) => { await repo.putHealth(kind, item); if (baby) setHealth(await repo.getHealth(baby.id)); }, [repo, baby]);
-  const deleteHealth = useCallback(async (kind: HealthKind, id: string) => { await repo.deleteHealth(kind, id); if (baby) setHealth(await repo.getHealth(baby.id)); }, [repo, baby]);
+  /* 示例模式进出：重新加载数据源（DemoRepo 在内存里生成豆米的数据） */
+  /* 示例模式守卫：所有写入口都先问它一句，被拦就弹 toast（DemoRepo 里还会再 throw 一次兜底） */
+  const guardDemo = useCallback(() => {
+    if (!demo) return true;
+    showToast('示例里只能看哦 · 点上方「开始记我家宝宝」');
+    return false;
+  }, [demo, showToast]);
+  const enterDemo = useCallback(() => setDemo(true), []);
+  const exitDemo = useCallback(() => setDemo(false), []);
+  const putHealth = useCallback<AppState['putHealth']>(async (kind, item) => { if (!guardDemo()) return; await repo.putHealth(kind, item); if (baby) setHealth(await repo.getHealth(baby.id)); }, [repo, baby, guardDemo]);
+  const deleteHealth = useCallback(async (kind: HealthKind, id: string) => { if (!guardDemo()) return; await repo.deleteHealth(kind, id); if (baby) setHealth(await repo.getHealth(baby.id)); }, [repo, baby, guardDemo]);
   const goHealth = useCallback((anchor: HealthNav['anchor'], tab?: HealthNav['tab']) => {
     setHealthNav(h => ({ tab: tab ?? h.tab, anchor, n: h.n + 1 })); router.navigate('/health');
   }, []);
   const setHealthTab = useCallback((t: HealthNav['tab']) => setHealthNav(h => ({ ...h, tab: t, anchor: 'ill', n: h.n + 1 })), []);
 
   const addRecord = useCallback<AppState['addRecord']>(async r => {
+    if (!guardDemo()) throw new Error('demo');
     if (!baby) throw new Error('no baby');
     const me = members.find(m => m.isLocal) ?? LOCAL_MEMBER;
     const rec = await repo.addRecord({ ...r, babyId: baby.id, createdBy: me.name, src: r.src ?? 'manual' });
@@ -117,19 +135,16 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     if (xp >= XP_MAX) { xp -= XP_MAX; lvl = Math.min(5, lvl + 1); lvUp = true; }
     await save({ xp, lvl }); await reload(baby); setNow(new Date());
     return { lvUp, rec };
-  }, [baby, members, records, repo, settings.xp, settings.lvl, save, reload]);
-  const updateRecord = useCallback<AppState['updateRecord']>(async (id, patch) => { await repo.updateRecord(id, patch); await reload(baby); }, [repo, reload, baby]);
-  const deleteRecord = useCallback(async (id: string) => { await repo.deleteRecord(id); await reload(baby); }, [repo, reload, baby]);
-  const saveBaby = useCallback(async (b: Baby) => { await repo.saveBaby(b); setBaby(b); }, [repo]);
+  }, [baby, members, records, repo, settings.xp, settings.lvl, save, reload, guardDemo]);
+  const updateRecord = useCallback<AppState['updateRecord']>(async (id, patch) => { if (!guardDemo()) return; await repo.updateRecord(id, patch); await reload(baby); }, [repo, reload, baby, guardDemo]);
+  const deleteRecord = useCallback(async (id: string) => { if (!guardDemo()) return; await repo.deleteRecord(id); await reload(baby); }, [repo, reload, baby, guardDemo]);
+  const saveBaby = useCallback(async (b: Baby) => { if (!guardDemo()) return; await repo.saveBaby(b); setBaby(b); }, [repo, guardDemo]);
   const acceptConsent = useCallback(async () => save({ consentAt: new Date().toISOString() }), [save]);
   const finishOnboarding = useCallback(async (b: Baby) => {
     await repo.saveBaby(b); setBaby(b);
-    if (!settings.demoSeeded) await seed(b); else await reload(b);
-    await save({ onboarded: true, demoSeeded: true });
-  }, [repo, settings.demoSeeded, seed, reload, save]);
-  const resetDemo = useCallback(async () => {
-    if (!baby) return; await seed(baby); await save({ cards: DEFAULT_SETTINGS.cards, lvl: 3, xp: 37, demoSeeded: true });
-  }, [baby, seed, save]);
+    await reload(b);
+    await save({ onboarded: true });
+  }, [repo, reload, save]);
   const clearAll = useCallback(async () => {
     if (cloud.state.userId) await cloud.signOut();
     await repo.clearAll(); setBaby(null); setRecords([]); setHealth(EMPTY_HEALTH()); setSettings(DEFAULT_SETTINGS); setMembers([LOCAL_MEMBER]);
@@ -144,18 +159,19 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     ready, p: settings.night ? nightP : light, now, baby, records, events, members, reminders,
     health, me, putHealth, deleteHealth, healthNav, goHealth, setHealthTab, dismissSugg,
     settings, night: settings.night, toggleNight,
-    cards: settings.cards, setCards: c => { save({ cards: c }); },
+    cards: settings.cards, setCards: c => { if (!guardDemo()) return; save({ cards: c }); },
     lvl: settings.lvl, xp: settings.xp, xpMax: XP_MAX,
     sample: settings.sample, setSample: i => { save({ sample: i }); },
     toast, showToast, cele, celebrate: setCele,
-    addRecord, updateRecord, deleteRecord, saveBaby, acceptConsent, finishOnboarding, resetDemo, clearAll,
-    recTarget, openRecord: (kind, rec) => setRecTarget({ kind, rec }), closeRecord: () => setRecTarget(null),
+    demo, canWrite: !demo, guardDemo, enterDemo, exitDemo,
+    addRecord, updateRecord, deleteRecord, saveBaby, acceptConsent, finishOnboarding, clearAll,
+    recTarget, openRecord: (kind, rec) => { if (!guardDemo()) return; setRecTarget({ kind, rec }); }, closeRecord: () => setRecTarget(null),
     trend, openTrend: setTrend, samplesOpen, setSamplesOpen,
     askMsgs, setAskMsgs,
     summaryOpen, summaryAud,
     openSummary: (aud?: 'doctor' | 'granny') => { if (aud) setSummaryAud(aud); setSummaryOpen(true); },
     closeSummary: () => setSummaryOpen(false),
-  }), [askMsgs, summaryOpen, summaryAud, samplesOpen, ready, settings, reminders, health, me, putHealth, deleteHealth, healthNav, goHealth, setHealthTab, dismissSugg, now, baby, records, events, members, toggleNight, save, toast, showToast, cele, addRecord, updateRecord, deleteRecord, saveBaby, acceptConsent, finishOnboarding, resetDemo, clearAll, recTarget, trend]);
+  }), [demo, guardDemo, enterDemo, exitDemo, askMsgs, summaryOpen, summaryAud, samplesOpen, ready, settings, reminders, health, me, putHealth, deleteHealth, healthNav, goHealth, setHealthTab, dismissSugg, now, baby, records, events, members, toggleNight, save, toast, showToast, cele, addRecord, updateRecord, deleteRecord, saveBaby, acceptConsent, finishOnboarding, clearAll, recTarget, trend]);
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 export const useApp = () => { const c = useContext(Ctx); if (!c) throw new Error('AppStateProvider missing'); return c; };

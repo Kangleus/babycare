@@ -23,7 +23,7 @@ type Sub = null | 'profile' | 'login' | 'family' | 'join' | 'invite' | 'policy' 
 
 export default function Me() {
   const app = useApp();
-  const { p, baby, now, lvl, xp, xpMax, night, toggleNight, members, records, saveBaby, resetDemo, clearAll, showToast, goHealth, reminders, openSummary } = app;
+  const { p, baby, now, lvl, xp, xpMax, night, toggleNight, members, records, saveBaby, clearAll, showToast, goHealth, reminders, openSummary } = app;
   const acc = useLvAcc();
   const [sub, setSub] = useState<Sub>(null);
   const [confirm, setConfirm] = useState<ConfirmOpts | null>(null);
@@ -38,7 +38,6 @@ export default function Me() {
   const askDelete = () => setConfirm({ t: '注销账号？', sub: '会删除你的账号和成员身份；只有你一个人的家庭，连同宝宝资料和记录会一起删除', ok: '继续', note: '第 1 步 / 共 2 步 · 和家人共享的记录会保留给家人', onOk: () => setTimeout(() => setConfirm({ t: '真的要注销吗？', sub: `${c.email ?? ''} 注销后无法恢复，这台设备上的数据也会清空`, ok: '永久注销', mood: 'shy', note: '第 2 步 / 共 2 步', onOk: async () => { try { await cloud.deleteAccount(); await clearAll(); } catch (e) { showToast(`注销失败：${(e as Error).message}`, 3500); } } }), 350) });
   const needLogin = (next: Sub) => setSub(signedIn ? next : 'login');
   const ROLE = { admin: '管理员', recorder: '可记录', viewer: '只读' };
-  const askReset = () => linked ? showToast('已连上云端家庭，不能用演示数据覆盖真实记录') : setConfirm({ t: '重置演示数据？', sub: `会用演示记录替换${baby.name}现在的全部记录`, ok: '重置', note: '宝宝资料和首页卡片设置会保留', onOk: async () => { await resetDemo(); showToast('演示数据已恢复'); } });
   const askClear = () => setConfirm({ t: '清空全部数据？', sub: '宝宝资料、所有记录和设置都会从这台设备删除', ok: '继续', note: '第 1 步 / 共 2 步', onOk: () => setTimeout(() => setConfirm({ t: '真的要清空吗？', sub: `${records.length} 条记录删掉后无法恢复`, ok: '清空', mood: 'shy', note: '第 2 步 / 共 2 步 · 清空后回到首次启动', onOk: async () => { await clearAll(); } }), 350) });
   return (
     <>
@@ -102,7 +101,6 @@ export default function Me() {
         <HGroup t="设置" />
         <List>
           <Li icon="moon" iconBg="#9C8BE0" t="夜间模式" sub="暖光低亮，团团戴睡帽陪你守夜" right={<Toggle testID="night-toggle" on={night} onPress={toggleNight} />} />
-          <Li testID="reset-demo" icon="star" iconBg={p.yellow} t="重置演示数据" sub="恢复豆米的演示记录" onPress={askReset} />
           <Li testID="clear-all" icon="warn" iconBg={p.coral} t="清空全部数据" sub="删除本机的宝宝资料和所有记录" onPress={askClear} />
           <Li testID="policy" icon="shield" iconBg={p.blue} t="隐私政策与用户协议" sub="草案 · 待法务审核" onPress={() => setSub('policy')} />
           <Li testID="about" icon="doc" iconBg={p.green} t="关于团子育儿本" sub={`v${VERSION} · ${linked ? '云端同步' : '本地版'}`} onPress={() => setSub('about')} last />
