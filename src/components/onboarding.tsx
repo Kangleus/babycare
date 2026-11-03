@@ -130,11 +130,12 @@ const FEATS: { bg: 'pink' | 'yellow' | 'blue' | 'green'; ic: IconName; t: string
 
 export function Welcome({ onStart, onDemo }: { onStart: () => void; onDemo: () => void }) {
   const { p, night, toggleNight } = useApp();
-  const top = useTopPad();
+  /* 尺寸对照原型 .full（padding 62/20/40）、.ob-top(42)、.ob-hero(210, margin -6/-10)、
+     .btn.go(60)、.ob-link、.ob-mini；CTA 那一整块用弹性留白顶到屏幕底部（原型 .ob-grow）。 */
   return (
     <View style={{ flex: 1, backgroundColor: p.yellow }} testID="ob-welcome">
-      <ScrollView contentContainerStyle={{ paddingTop: top, paddingHorizontal: 20, paddingBottom: 28 }} showsVerticalScrollIndicator={false}>
-        <View style={{ flexDirection: 'row', justifyContent: 'flex-end', height: 42 }}>
+      <ScrollView contentContainerStyle={{ flexGrow: 1, paddingTop: 62, paddingHorizontal: 20, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
+        <View style={s.obTop}>
           <Pressable testID="ob-night" accessibilityLabel="夜间模式" onPress={toggleNight}
             style={({ pressed }) => [s.iconbtn, { backgroundColor: p.card, borderColor: p.ink }, pressed ? { transform: [{ translateY: 3 }] } : hard(p, 3)]}>
             <Icon name={night ? 'sun' : 'moon'} size={22} color={p.ink} />
@@ -144,7 +145,7 @@ export function Welcome({ onStart, onDemo }: { onStart: () => void; onDemo: () =
           <Tuan mood="happy" acc={[night ? 'cap' : 'sprout']} size={210} cls="nod" />
         </View>
         <Txt f="h" size={38} style={{ textAlign: 'center', lineHeight: 40 }}>团子育儿本</Txt>
-        <Txt f="b9" size={15} style={{ textAlign: 'center', marginTop: 8, lineHeight: 22 }}>一句话记下宝宝的吃睡拉，团团帮你算</Txt>
+        <Txt f="b9" size={15} style={{ textAlign: 'center', marginTop: 8, lineHeight: 23 }}>一句话记下宝宝的吃睡拉，团团帮你算</Txt>
         <View style={s.feats}>
           {FEATS.map(f => (
             <View key={f.t} style={[s.feat, { backgroundColor: p.card, borderColor: p.ink, shadowColor: p.shadow }]}>
@@ -156,7 +157,7 @@ export function Welcome({ onStart, onDemo }: { onStart: () => void; onDemo: () =
             </View>
           ))}
         </View>
-        <View style={{ height: 18 }} />
+        <View style={{ flex: 1, minHeight: 12 }} />
         <GoBtn testID="ob-start" label="开始使用" icon="sparkle" onPress={onStart} />
         <Pressable testID="ob-demo" onPress={onDemo} style={{ marginTop: 16, alignSelf: 'center' }}>
           <Txt f="b9" size={14} style={{ textDecorationLine: 'underline' }}>先看看示例</Txt>
@@ -422,6 +423,7 @@ export function FirstBabyStep({ onJoin }: { onJoin: () => void }) {
 
 const s = StyleSheet.create({
   iconbtn: { width: 42, height: 42, borderRadius: 15, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center' },
+  obTop: { flexDirection: 'row', justifyContent: 'flex-end', height: 42 },
   feats: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 18 },
   feat: { width: '47.6%', flexDirection: 'row', gap: 8, alignItems: 'center', borderWidth: 2.5, borderRadius: 22, padding: 10, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 1, shadowRadius: 0, elevation: 3 },
   featIc: { width: 36, height: 36, borderRadius: 13, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
