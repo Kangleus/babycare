@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { ReactNode, useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { TabList, TabSlot, Tabs, TabTrigger } from 'expo-router/ui';
 import * as SplashScreen from 'expo-splash-screen';
@@ -15,8 +15,10 @@ import { SamplesPop } from '@/components/sample';
 import { RecordSheet } from '@/components/record-sheet';
 import { VoiceLayer } from '@/components/voice';
 import { TrendSheet } from '@/components/trend';
-import { OnboardingFlow, FirstBabyStep } from '@/components/onboarding';
-import { FamilySetupPage, JoinPage } from '@/components/cloud-ui';
+import { OnboardingFlow, SetPwPage, setNextStart, useRecovery } from '@/components/onboarding';
+import { BabyForm, EMPTY_BABY, FamilyFlow } from '@/components/ob-family';
+import { CoachMark, FirstSheet, InviteSheet } from '@/components/ob-home';
+import { FullPage } from '@/components/ui';
 import { usePathname } from 'expo-router';
 import { injectMascotCss } from '@/lib/mascot-css';
 import { RingBanner, RingWatcher } from '@/components/health/ring';
@@ -62,6 +64,7 @@ function TabTree() {
         <StatusBarMock />
         {path === '/' ? <SamplesPop /> : null}
         <TabBar />
+        <CoachMark />
         <RingWatcher />
         <RingBanner />
         <RecordSheet />
@@ -69,6 +72,8 @@ function TabTree() {
         <SummarySheet />
         <VoiceLayer />
         <Cele />
+        <FirstSheet />
+        <InviteSheet />
         <NightTint />
         <Toast />
       </Tabs>
@@ -86,11 +91,43 @@ function Linking() {
   );
 }
 
+/** 整页流程（欢迎 / 认证 / 选择 / 宝宝资料）外面那层：状态栏、夜间蒙版、toast */
+function FlowChrome({ children }: { children: ReactNode }) {
+  return (
+    <View style={{ flex: 1 }}>
+      {children}
+      <StatusBarMock />
+      <NightTint />
+      <Toast />
+    </View>
+  );
+}
+
+/** 有家庭但还没有宝宝（极少见：比如加入的家庭里管理员还没建宝宝）：补一份宝宝资料 */
+function BabyMissing() {
+  const { p, saveBaby } = useApp();
+  const [init] = useState(EMPTY_BABY);
+  return (
+    <FullPage ob bg={p.pink} title="宝宝资料" testID="ob-profile-missing">
+      <View style={{ height: 12 }} />
+      <BabyForm init={init} submitLabel="开始记录" onSubmit={b => saveBaby(b)} />
+    </FullPage>
+  );
+}
+
 function Shell() {
-  const { ready, demo, baby } = useApp();
+  const { ready, demo, baby, resetLocal } = useApp();
   const c = useCloud();
-  const [join, setJoin] = useState(false);
+  /* 加入家庭成功后先停在 3b「加入成功」，用户点「去看看」才进首页 */
+  const [joined, setJoined] = useState<string | null>(null);
+  const [recovering, endRecovery] = useRecovery();
   useEffect(() => { if (ready) SplashScreen.hideAsync(); }, [ready]);
+  /* 退出 / 注销 / 换账号：这台设备上的宝宝、记录、健康档案、设置全部清掉（只留夜间模式） */
+  const prevUser = useRef<string | null>(null);
+  useEffect(() => {
+    if (prevUser.current && prevUser.current !== c.userId) { void resetLocal(); setJoined(null); }
+    prevUser.current = c.userId;
+  }, [c.userId, resetLocal]);
 
   if (!ready) return <View style={{ flex: 1, backgroundColor: '#FFF9EC' }} />;
 
@@ -104,28 +141,29 @@ function Shell() {
     );
   }
 
-  /* 没登录：欢迎 → 注册 / 登录 → 验证 / 忘记密码 → 设置新密码 */
-  if (!c.userId) {
+  /* 点了重置邮件里的链接：先设新密码，设好后退出，回登录页用新密码登录 */
+  if (recovering && c.userId) {
+    const email = c.email ?? '';
     return (
-      <View style={{ flex: 1 }}>
-        <OnboardingFlow />
-        <StatusBarMock />
-        <NightTint />
-        <Toast />
-      </View>
+      <FlowChrome>
+        <SetPwPage from="recovery" onDone={ok => {
+          setNextStart({ mode: 'in', email, notice: ok ? { tone: 'ok', icon: 'check', t: '新密码设置好了', sub: '用新密码登录吧' } : null });
+          endRecovery(); void cloud.signOut();
+        }} />
+      </FlowChrome>
     );
   }
 
-  /* 登录了但还没加入家庭 */
-  if (!c.link) {
-    if (c.status !== 'noFamily') return <Linking />;
-    return join
-      ? <JoinPage onClose={() => setJoin(false)} />
-      : <FamilySetupPage carryLocal={false} onClose={() => { void cloud.signOut(); }} onJoin={() => setJoin(true)} />;
+  /* 没登录：欢迎 → 注册 / 登录 → 验证 / 忘记密码 */
+  if (!c.userId) return <FlowChrome><OnboardingFlow /></FlowChrome>;
+
+  /* 登录了但还没加入家庭：选择 → 新建宝宝 / 邀请码；加入成功页 */
+  if (!c.link || joined) {
+    if (!c.link && !joined && c.status !== 'noFamily') return <Linking />;
+    return <FlowChrome><FamilyFlow joined={joined} onJoined={setJoined} onEnter={() => setJoined(null)} /></FlowChrome>;
   }
 
-  /* 有家庭但还没有宝宝资料 */
-  if (!baby) return <FirstBabyStep onJoin={() => setJoin(true)} />;
+  if (!baby) return <FlowChrome><BabyMissing /></FlowChrome>;
 
   return <TabTree />;
 }

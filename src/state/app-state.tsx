@@ -38,9 +38,15 @@ type AppState = {
   deleteRecord: (id: string) => Promise<void>;
   saveBaby: (b: Baby) => Promise<void>;
   acceptConsent: () => Promise<void>;
-  finishOnboarding: (b: Baby) => Promise<void>;
+  /** 首次使用「开始记录」：一个 RPC 建家庭 + 宝宝，然后进空首页（团团 Lv.1、引导打开） */
+  finishOnboarding: (b: Baby, displayName: string) => Promise<void>;
   demo: boolean; canWrite: boolean; guardDemo: () => boolean; enterDemo: () => void; exitDemo: () => void;
-  clearAll: () => Promise<void>;
+  /** 退出 / 注销后：清掉这台设备上的宝宝、记录、健康档案和设置（只保留夜间模式） */
+  resetLocal: () => Promise<void>;
+  /** 首次使用：空首页团团引导 / 邀请家人提示卡 / 第一条记录后的 5a sheet */
+  saveFlags: (patch: Pick<Partial<Settings>, 'guideDone' | 'nudgeGone' | 'firstDone'>) => void;
+  firstOpen: boolean; closeFirst: () => void;
+  inviteOpen: boolean; openInvite: () => void; closeInvite: () => void;
   recTarget: RecTarget; openRecord: (kind: Kind, rec?: BabyRecord) => void; closeRecord: () => void;
   trend: Kind | null; openTrend: (k: Kind | null) => void;
   askMsgs: AskMsg[]; setAskMsgs: (m: AskMsg[]) => void;
@@ -71,7 +77,12 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [samplesOpen, setSamplesOpen] = useState(false);
   const [health, setHealth] = useState<HealthData>(EMPTY_HEALTH);
   const [healthNav, setHealthNav] = useState<HealthNav>({ tab: 'ill', anchor: 'top', n: 0 });
+  const [firstOpen, setFirstOpen] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /* 家庭的第一条记录：庆祝文案换成「第一条记好啦！」，之后的那句 toast 换成「记满 3 天…」，再弹 5a sheet */
+  const firstRef = useRef<'pending' | 'shown' | null>(null);
+  const muteToast = useRef(false);
 
   const load = useCallback(async () => {
     const [b, s, m] = await Promise.all([repo.getBaby(), repo.getSettings(), repo.getMembers()]);
@@ -95,6 +106,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   useEffect(() => { const t = setInterval(() => setNow(new Date()), 30000); return () => clearInterval(t); }, []);
 
   const showToast = useCallback((t: string, ms = 2200) => {
+    if (muteToast.current) { muteToast.current = false; return; }
     setToast(t); if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(() => setToast(null), ms);
   }, []);
@@ -124,6 +136,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const addRecord = useCallback<AppState['addRecord']>(async r => {
     if (!guardDemo()) throw new Error('demo');
     if (!baby) throw new Error('no baby');
+    if (!records.length && !settings.firstDone) firstRef.current = 'pending';
     const me = members.find(m => m.isLocal) ?? LOCAL_MEMBER;
     const rec = await repo.addRecord({ ...r, babyId: baby.id, createdBy: me.name, src: r.src ?? 'manual' });
     /* 结束上一段「进行中」的睡眠（原型 commit()） */
@@ -133,22 +146,37 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     }
     let xp = settings.xp + 1, lvl = settings.lvl, lvUp = false;
     if (xp >= XP_MAX) { xp -= XP_MAX; lvl = Math.min(5, lvl + 1); lvUp = true; }
-    await save({ xp, lvl }); await reload(baby); setNow(new Date());
+    await save({ xp, lvl, ...(firstRef.current === 'pending' ? { firstDone: true, guideDone: true } : {}) }); await reload(baby); setNow(new Date());
     return { lvUp, rec };
-  }, [baby, members, records, repo, settings.xp, settings.lvl, save, reload, guardDemo]);
+  }, [baby, members, records, repo, settings.xp, settings.lvl, settings.firstDone, save, reload, guardDemo]);
+  const celebrate = useCallback((c: Cele) => {
+    if (c && firstRef.current === 'pending') { firstRef.current = 'shown'; setCele({ say: '第一条记好啦！' }); return; }
+    if (!c && firstRef.current === 'shown') {
+      firstRef.current = null; setCele(null);
+      showToast('记满 3 天，团团就能预测下一顿啦', 2600);
+      muteToast.current = true; /* 调用方紧接着会弹「预测已刷新…」，第一条时不弹 */
+      setTimeout(() => { muteToast.current = false; setFirstOpen(true); }, 600);
+      return;
+    }
+    setCele(c);
+  }, [showToast]);
   const updateRecord = useCallback<AppState['updateRecord']>(async (id, patch) => { if (!guardDemo()) return; await repo.updateRecord(id, patch); await reload(baby); }, [repo, reload, baby, guardDemo]);
   const deleteRecord = useCallback(async (id: string) => { if (!guardDemo()) return; await repo.deleteRecord(id); await reload(baby); }, [repo, reload, baby, guardDemo]);
   const saveBaby = useCallback(async (b: Baby) => { if (!guardDemo()) return; await repo.saveBaby(b); setBaby(b); }, [repo, guardDemo]);
   const acceptConsent = useCallback(async () => save({ consentAt: new Date().toISOString() }), [save]);
-  const finishOnboarding = useCallback(async (b: Baby) => {
-    await repo.saveBaby(b); setBaby(b);
-    await reload(b);
-    await save({ onboarded: true });
-  }, [repo, reload, save]);
-  const clearAll = useCallback(async () => {
-    if (cloud.state.userId) await cloud.signOut();
-    await repo.clearAll(); setBaby(null); setRecords([]); setHealth(EMPTY_HEALTH()); setSettings(DEFAULT_SETTINGS); setMembers([LOCAL_MEMBER]);
-  }, [repo]);
+  const finishOnboarding = useCallback(async (b: Baby, displayName: string) => {
+    await cloud.createFamilyWithBaby(displayName, b);
+    await save({ onboarded: true, lvl: 1, xp: 0, guideDone: false, nudgeGone: false, firstDone: false });
+    await load();
+  }, [save, load]);
+  const resetLocal = useCallback(async () => {
+    const n = settings.night;
+    if (demo) return;
+    await repo.clearAll();
+    setBaby(null); setRecords([]); setHealth(EMPTY_HEALTH()); setMembers([LOCAL_MEMBER]); setAskMsgs([]);
+    setSettings(await repo.saveSettings({ night: n }));
+  }, [repo, demo, settings.night]);
+  const saveFlags = useCallback((patch: Pick<Partial<Settings>, 'guideDone' | 'nudgeGone' | 'firstDone'>) => { save(patch); }, [save]);
 
   const events = useMemo(() => dayEvs(records, now), [records, now]);
   const me = (members.find(m => m.isLocal) ?? LOCAL_MEMBER).name;
@@ -162,16 +190,18 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     cards: settings.cards, setCards: c => { if (!guardDemo()) return; save({ cards: c }); },
     lvl: settings.lvl, xp: settings.xp, xpMax: XP_MAX,
     sample: settings.sample, setSample: i => { save({ sample: i }); },
-    toast, showToast, cele, celebrate: setCele,
+    toast, showToast, cele, celebrate,
     demo, canWrite: !demo, guardDemo, enterDemo, exitDemo,
-    addRecord, updateRecord, deleteRecord, saveBaby, acceptConsent, finishOnboarding, clearAll,
+    addRecord, updateRecord, deleteRecord, saveBaby, acceptConsent, finishOnboarding, resetLocal, saveFlags,
+    firstOpen, closeFirst: () => setFirstOpen(false),
+    inviteOpen, openInvite: () => { if (!guardDemo()) return; setFirstOpen(false); setInviteOpen(true); }, closeInvite: () => setInviteOpen(false),
     recTarget, openRecord: (kind, rec) => { if (!guardDemo()) return; setRecTarget({ kind, rec }); }, closeRecord: () => setRecTarget(null),
     trend, openTrend: setTrend, samplesOpen, setSamplesOpen,
     askMsgs, setAskMsgs,
     summaryOpen, summaryAud,
     openSummary: (aud?: 'doctor' | 'granny') => { if (aud) setSummaryAud(aud); setSummaryOpen(true); },
     closeSummary: () => setSummaryOpen(false),
-  }), [demo, guardDemo, enterDemo, exitDemo, askMsgs, summaryOpen, summaryAud, samplesOpen, ready, settings, reminders, health, me, putHealth, deleteHealth, healthNav, goHealth, setHealthTab, dismissSugg, now, baby, records, events, members, toggleNight, save, toast, showToast, cele, addRecord, updateRecord, deleteRecord, saveBaby, acceptConsent, finishOnboarding, clearAll, recTarget, trend]);
+  }), [demo, guardDemo, enterDemo, exitDemo, askMsgs, summaryOpen, summaryAud, samplesOpen, ready, settings, reminders, health, me, putHealth, deleteHealth, healthNav, goHealth, setHealthTab, dismissSugg, now, baby, records, events, members, toggleNight, save, toast, showToast, cele, celebrate, addRecord, updateRecord, deleteRecord, saveBaby, acceptConsent, finishOnboarding, resetLocal, saveFlags, firstOpen, inviteOpen, recTarget, trend]);
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 export const useApp = () => { const c = useContext(Ctx); if (!c) throw new Error('AppStateProvider missing'); return c; };

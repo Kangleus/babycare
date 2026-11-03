@@ -48,6 +48,10 @@ export type Settings = {
   demoSeeded: boolean;
   /** 团团建议里点了「知道了」的条目（本机） */
   sgGone?: string[];
+  /** 首次使用：空首页的团团引导已关闭 / 「邀请家人」提示卡已关闭 / 第一条记录的庆祝已出现过 */
+  guideDone?: boolean;
+  nudgeGone?: boolean;
+  firstDone?: boolean;
 };
 
 /* —— M4 健康 —— */

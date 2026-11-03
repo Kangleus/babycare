@@ -22,7 +22,8 @@ export function ageParts(birth: Date, today: Date) {
 export function ageText(birthday: string, today: Date, withWeek = true) {
   const b = parseYmd(birthday); if (!b) return '';
   const a = ageParts(b, today);
-  const age = !a.born ? '还没出生' : a.m ? `${a.m} 个月 ${a.d} 天` : `${a.d} 天`;
+  /* 原型 #onboarding ageOf()：不满 1 个月显示「出生第 N 天」，整月不带「0 天」 */
+  const age = !a.born ? '还没出生' : a.m ? `${a.m} 个月${a.d ? ` ${a.d} 天` : ''}` : `出生第 ${Math.round((startOfDay(today).getTime() - b.getTime()) / DAY) + 1} 天`;
   return withWeek ? `${age} · 周${WK[today.getDay()]}` : age;
 }
 /** 把「当天第 N 分钟」换算成 Date */

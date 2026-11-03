@@ -3,21 +3,16 @@
    1 欢迎 / 2 注册 / 2a 登录 / 2b 密码错 / 2c 验证邮件 / 2d 找回密码 / 2e 已发送 / 2f 设新密码
    原型里虚线的「原型演示」提示框（demoNote）和「一键填入演示账号」按钮**不做进 App**。
    设计依据：docs/ONBOARDING-FLOW.md */
-import { useEffect, useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ReactNode, useEffect, useRef, useState } from 'react';
+import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useApp } from '@/state/app-state';
 import { cloud } from '@/data/sync';
 import { supabase } from '@/data/supabase';
-import { uid } from '@/data/repo';
-import type { AvatarKey, Baby, Gender } from '@/data/types';
-import { ageText, parseYmd } from '@/lib/time';
 import { hard } from '@/theme/tokens';
 import { Icon, Tuan } from '@/lib/svg';
 import type { IconName } from '@/lib/art';
-import { AVATARS, BabyAvatar } from './home';
-import { useTopPad } from './chrome';
-import { CBox, Fl, FullCard, FullHero, FullPage, GoBtn, Inp, NoteS, Seg } from './ui';
-import { Txt } from './txt';
+import { CBox, Fl, FullCard, FullPage, GoBtn, Inp, NoteS } from './ui';
+import { InkReset, Txt } from './txt';
 
 /* ⚠️ 草案占位文本：上线前需由法务定稿替换 */
 export const POLICY_DRAFT = [
@@ -31,61 +26,25 @@ export const POLICY_DRAFT = [
 ];
 export const POLICY_VERSION = 'draft-2026-11-02';
 
-/* ---------- 宝宝资料（第 3 步会用新样式替换，这里先保留给过渡流程） ---------- */
-export function ProfileForm({ init, onSubmit, submitLabel, testID }: { init: Baby; onSubmit: (b: Baby) => void; submitLabel: string; testID?: string }) {
-  const { p, now, showToast } = useApp();
-  const [name, setName] = useState(init.name);
-  const [bd, setBd] = useState(init.birthday);
-  const [gender, setGender] = useState<Gender>(init.gender);
-  const [avatar, setAvatar] = useState<AvatarKey>(init.avatar);
-  const d = parseYmd(bd), ok = !!name.trim() && !!d && d <= now;
-  const submit = () => {
-    if (!name.trim()) return showToast('给宝宝起个昵称吧');
-    if (!d) return showToast('生日格式像 2026-03-28 这样');
-    if (d > now) return showToast('生日不能晚于今天');
-    onSubmit({ ...init, name: name.trim().slice(0, 12), birthday: bd.trim(), gender, avatar });
-  };
-  return (
-    <View testID={testID}>
-      <FullCard>
-        <Fl>宝宝昵称</Fl>
-        <Inp testID="pf-name" value={name} onChangeText={setName} placeholder="比如：豆米" maxLength={12} />
-        <Fl style={{ marginTop: 14 }}>生日 · 年-月-日</Fl>
-        <Inp testID="pf-bd" value={bd} onChangeText={setBd} placeholder="2026-03-28" maxLength={10} inputMode="numeric" />
-        <NoteS>{d ? (d > now ? '生日不能晚于今天' : `今天 ${ageText(bd, now)}`) : '格式像 2026-03-28 这样'}</NoteS>
-        <Fl style={{ marginTop: 14 }}>性别</Fl>
-        <Seg testID="pf-gender" opts={[{ k: 'girl', t: '女宝' }, { k: 'boy', t: '男宝' }]} value={gender} onChange={k => setGender(k as Gender)} />
-        <Fl style={{ marginTop: 14 }}>头像</Fl>
-        <View style={s.avs}>
-          {AVATARS.map(a => (
-            <Pressable key={a.k} testID={`pf-av-${a.k}`} onPress={() => setAvatar(a.k)} style={[s.av, { backgroundColor: a.k === avatar ? p.pinkS : p.bg, borderColor: p.ink }, a.k === avatar ? hard(p, 3) : null]}>
-              <View style={s.avIn}><BabyAvatar k={a.k} size={40} /></View>
-              <Txt f="b9" size={10.5} color={a.k === avatar ? p.ink : p.sub}>{a.n}</Txt>
-            </Pressable>
-          ))}
-        </View>
-      </FullCard>
-      <GoBtn testID="pf-submit" label={submitLabel} onPress={submit} disabled={!ok} />
-    </View>
-  );
-}
-
-export const DEFAULT_BABY = (): Baby => ({ id: uid(), name: '', birthday: '', gender: 'girl', avatar: 'baby', feeding: 'formula' });
-
 /* ---------- 通用小组件 ---------- */
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
-/** 顶部 banner：成功绿色 / 失败红色（原型 .ob-banner） */
-function Banner({ tone, t, sub, testID }: { tone: 'ok' | 'err'; t: string; sub?: string; testID?: string }) {
+/** 顶部 banner（原型 .ob-banner）：默认白底 / ok 绿底 / err 红底；虚线描边一律是 --ink；标题前可带 16px 图标 */
+export function Banner({ tone, icon, t, sub, testID }: { tone?: 'ok' | 'err'; icon?: IconName; t: string; sub?: ReactNode; testID?: string }) {
   const { p, night } = useApp();
-  const bg = tone === 'ok' ? p.greenS : (night ? '#4a2a24' : '#FFE6E0');
-  const tc = tone === 'ok' ? p.ink : (night ? '#ff9d8a' : '#C9452F');
+  const bg = tone === 'ok' ? p.greenS : tone === 'err' ? (night ? '#4a2a24' : '#FFE6E0') : p.card;
+  const tc = tone === 'err' ? (night ? '#ff9d8a' : '#C9452F') : p.ink;
   return (
-    <View testID={testID} style={[s.banner, { backgroundColor: bg, borderColor: tone === 'ok' ? p.ink : tc }]}>
-      <Txt f="b9" size={13.5} color={tc}>{t}</Txt>
-      {sub ? <Txt f="b7" size={12} color={tc} style={{ marginTop: 3, lineHeight: 18 }}>{sub}</Txt> : null}
-    </View>
+    <InkReset value={null}>
+      <View testID={testID} style={[s.banner, { backgroundColor: bg, borderColor: p.ink }, hard(p, 3)]}>
+        <View style={s.bannerT}>
+          {icon ? <Icon name={icon} size={16} color={tc} /> : null}
+          <Txt f="b9" size={13} color={tc} style={{ flexShrink: 1 }}>{t}</Txt>
+        </View>
+        {sub ? <Txt f="b8" size={11.5} color={p.sub} style={{ marginTop: 2, lineHeight: 17.25 }}>{sub}</Txt> : null}
+      </View>
+    </InkReset>
   );
 }
 
@@ -131,7 +90,7 @@ function ObMail({ mail }: { mail: string }) {
 }
 
 /** .ob-resend：居中的小号链接 */
-function ObLink({ t, onPress, testID, style }: { t: string; onPress: () => void; testID?: string; style?: object }) {
+export function ObLink({ t, onPress, testID, style }: { t: string; onPress: () => void; testID?: string; style?: object }) {
   return (
     <Pressable testID={testID} onPress={onPress} style={[{ alignSelf: 'center', marginTop: 14 }, style]}>
       <Txt f="b9" size={12.5} style={{ textDecorationLine: 'underline', opacity: 0.8 }}>{t}</Txt>
@@ -140,7 +99,7 @@ function ObLink({ t, onPress, testID, style }: { t: string; onPress: () => void;
 }
 
 /** .ob-err：字段下方红字 */
-function ErrLine({ msg }: { msg?: string }) {
+export function ErrLine({ msg }: { msg?: string }) {
   const { night } = useApp();
   if (!msg) return null;
   return (
@@ -204,9 +163,11 @@ export function Welcome({ onStart, onDemo }: { onStart: () => void; onDemo: () =
 
 /* ---------- 2 / 2a / 2b 注册 · 登录 ---------- */
 
+export type Notice = { tone?: 'ok' | 'err'; icon?: IconName; t: string; sub?: string };
+
 export function AuthPage({ onBack, onVerify, onForgot, initialMode = 'up', prefillEmail = '', notice }: {
   onBack: () => void; onVerify: (email: string) => void; onForgot: (email: string) => void;
-  initialMode?: 'up' | 'in'; prefillEmail?: string; notice?: string | null;
+  initialMode?: 'up' | 'in'; prefillEmail?: string; notice?: Notice | null;
 }) {
   const { p, showToast } = useApp();
   const [mode, setMode] = useState<'up' | 'in'>(initialMode);
@@ -215,16 +176,16 @@ export function AuthPage({ onBack, onVerify, onForgot, initialMode = 'up', prefi
   const [agree, setAgree] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<{ email?: string; pw?: string }>({});
-  const [banner, setBanner] = useState<{ tone: 'ok' | 'err'; t: string; sub?: string } | null>(null);
+  const [banner, setBanner] = useState<Notice | null>(null);
 
   const submit = async () => {
     if (busy) return;
     const up = mode === 'up';
     const e: { email?: string; pw?: string } = {};
-    if (!EMAIL_RE.test(email.trim())) e.email = '邮箱格式不对，像 name@example.com 这样';
-    if (pw.length < 6) e.pw = '密码至少 6 位';
+    if (!EMAIL_RE.test(email.trim())) e.email = email.trim() ? '邮箱格式不对，像 name@example.com 这样' : '先填一下邮箱';
+    if (pw.length < 6) e.pw = pw ? '密码至少 6 位' : '先填一下密码';
     setErr(e);
-    if (e.email || e.pw) return;
+    if (e.email || e.pw) { showToast((e.email || e.pw)!); return; }
     if (up && !agree) { showToast('请先勾选同意《隐私政策》和《用户协议》'); return; }
     setBanner(null); setBusy(true);
     try {
@@ -235,28 +196,37 @@ export function AuthPage({ onBack, onVerify, onForgot, initialMode = 'up', prefi
         /* r === 'ok'：项目关闭了邮箱验证，已经直接登录，外层的 gate 会切到下一步 */
       } else {
         await cloud.signIn(email.trim(), pw);
-        setBusy(false);
+        setBusy(false); showToast('登录成功');
       }
     } catch (ex) {
       setBusy(false);
-      setBanner({ tone: 'err', t: '邮箱或密码不对', sub: (ex as Error).message });
-      setErr({ pw: ' ' });
+      const msg = (ex as Error).message;
+      if (!up && msg === '邮箱或密码不对') {
+        /* 不区分「账号不存在」和「密码错」（防止探测哪些邮箱注册过） */
+        setBanner({ tone: 'err', icon: 'warn', t: '邮箱或密码不对', sub: '再试一次，或者点「忘记密码？」用邮箱重置' });
+        setErr({ pw: ' ' });
+      } else if (!up && msg.startsWith('邮箱还没验证')) {
+        setBanner({ tone: 'err', icon: 'warn', t: '邮箱还没验证', sub: '去邮箱点一下链接，再回来登录' });
+      } else {
+        setBanner({ tone: 'err', icon: 'warn', t: msg });
+      }
+      showToast(msg);
     }
   };
 
   const up = mode === 'up';
   return (
-    <FullPage bg={p.blue} title={up ? '注册' : '登录'} onClose={onBack} closeIcon="chev" closeLabel="返回" testID="ob-auth">
-      {banner ? <Banner tone={banner.tone} t={banner.t} sub={banner.sub} testID="ob-auth-banner" /> : notice ? <Banner tone="ok" t={notice} testID="ob-auth-notice" /> : null}
+    <FullPage bg={p.blue} title={up ? '注册' : '登录'} onClose={onBack} ob testID="ob-auth">
+      {banner ? <Banner {...banner} testID="ob-auth-banner" /> : notice ? <Banner {...notice} testID="ob-auth-notice" /> : null}
       <View style={s.hs}><Tuan mood={busy ? 'listen' : up ? 'happy' : 'idle'} acc={up ? ['flower'] : ['cap']} size={150} /></View>
       <Txt f="b9" size={14} style={{ textAlign: 'center', marginBottom: 12 }}>{up ? '用邮箱注册，全家一起记' : '欢迎回来！'}</Txt>
       <SegBig testID="ob-mode" opts={[{ k: 'in', t: '登录' }, { k: 'up', t: '注册' }]} value={mode} onChange={m => { setMode(m); setErr({}); setBanner(null); }} />
       <FullCard>
         <Fl>邮箱</Fl>
-        <Inp h={38} bg={p.bg} testID="ob-email" value={email} onChangeText={setEmail} placeholder="name@example.com" keyboardType="email-address" autoCapitalize="none" autoCorrect={false} autoComplete="email" textContentType="emailAddress" onSubmitEditing={submit} />
+        <Inp h={38} bg={p.bg} err={!!err.email} testID="ob-email" value={email} onChangeText={setEmail} placeholder="name@example.com" keyboardType="email-address" autoCapitalize="none" autoCorrect={false} autoComplete="email" textContentType="emailAddress" onSubmitEditing={submit} />
         <ErrLine msg={err.email} />
         <Fl style={{ marginTop: 14 }}>{up ? '设置密码' : '密码'}</Fl>
-        <Inp h={38} bg={p.bg} testID="ob-pw" value={pw} onChangeText={setPw} placeholder="至少 6 位" secureTextEntry autoCapitalize="none" autoComplete={up ? 'new-password' : 'password'} textContentType={up ? 'newPassword' : 'password'} onSubmitEditing={submit} />
+        <Inp h={38} bg={p.bg} err={!!err.pw} testID="ob-pw" value={pw} onChangeText={setPw} placeholder="至少 6 位" secureTextEntry autoCapitalize="none" autoComplete={up ? 'new-password' : 'password'} textContentType={up ? 'newPassword' : 'password'} onSubmitEditing={submit} />
         <ErrLine msg={err.pw?.trim() ? err.pw : undefined} />
         {up ? (
           <>
@@ -275,7 +245,7 @@ export function AuthPage({ onBack, onVerify, onForgot, initialMode = 'up', prefi
           </View>
         )}
       </FullCard>
-      <GoBtn testID="ob-submit" label={busy ? '请稍候…' : up ? '注册' : '登录'} icon={up ? 'sparkle' : 'user'} disabled={busy || (up && !agree)} onPress={submit} />
+      <GoBtn testID="ob-submit" label={busy ? '请稍候…' : up ? '注册' : '登录'} icon={up ? 'sparkle' : 'user'} disabled={busy} off={up && !agree} onPress={submit} />
     </FullPage>
   );
 }
@@ -297,7 +267,7 @@ export function VerifyPage({ email, onGoLogin, onBack }: { email: string; onGoLo
     } catch (e) { showToast((e as Error).message); }
   };
   return (
-    <FullPage bg={p.green} title="验证邮箱" onClose={onBack} closeIcon="chev" closeLabel="返回" testID="ob-verify">
+    <FullPage bg={p.green} title="验证邮箱" onClose={onBack} ob testID="ob-verify">
       <View style={s.hs}><Tuan mood="happy" acc={['book']} size={150} /></View>
       <View style={{ alignItems: 'center', marginBottom: 12 }}>
         <Txt f="b9" size={14} style={{ textAlign: 'center', lineHeight: 20 }}>验证邮件已发到</Txt>
@@ -318,9 +288,9 @@ export function VerifyPage({ email, onGoLogin, onBack }: { email: string; onGoLo
 
 /* ---------- 2d 找回密码 / 2e 已发送 ---------- */
 
-export function ForgotPage({ onBack }: { onBack: () => void }) {
+export function ForgotPage({ onBack, initialEmail = '' }: { onBack: () => void; initialEmail?: string }) {
   const { p } = useApp();
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(initialEmail);
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
@@ -333,8 +303,8 @@ export function ForgotPage({ onBack }: { onBack: () => void }) {
   };
   if (sent) {
     return (
-      <FullPage bg={p.blue} title="找回密码" onClose={onBack} closeIcon="chev" closeLabel="返回" testID="ob-forgot-sent">
-        <Banner tone="ok" t="重置邮件已发送" sub={`发到 ${email.trim()}，点邮件里的链接设置新密码，1 小时内有效`} testID="ob-sent-mail" />
+      <FullPage bg={p.blue} title="找回密码" onClose={onBack} ob testID="ob-forgot-sent">
+        <Banner tone="ok" icon="check" t="重置邮件已发送" sub={<>发到 <Txt f="b9" size={11.5} color={p.sub}>{email.trim()}</Txt>，点邮件里的链接设置新密码，1 小时内有效</>} testID="ob-sent-mail" />
         <View style={s.hs}><Tuan mood="happy" acc={['book']} size={150} /></View>
         <Txt f="b9" size={14} style={{ textAlign: 'center', marginBottom: 12 }}>去邮箱看看吧～</Txt>
         <FullCard>
@@ -347,7 +317,7 @@ export function ForgotPage({ onBack }: { onBack: () => void }) {
     );
   }
   return (
-    <FullPage bg={p.blue} title="找回密码" onClose={onBack} closeIcon="chev" closeLabel="返回" testID="ob-forgot">
+    <FullPage bg={p.blue} title="找回密码" onClose={onBack} ob testID="ob-forgot">
       <View style={s.hs}><Tuan mood="worry" acc={['cap']} size={150} /></View>
       <Txt f="b9" size={14} style={{ textAlign: 'center', marginBottom: 12 }}>别着急，用注册邮箱重置一下</Txt>
       <FullCard>
@@ -363,54 +333,70 @@ export function ForgotPage({ onBack }: { onBack: () => void }) {
 
 /* ---------- 2f 设置新密码 ---------- */
 
-export function SetPwPage({ from, onDone }: { from: 'recovery' | 'me'; onDone: () => void }) {
+export function SetPwPage({ from, onDone }: { from: 'recovery' | 'me'; onDone: (ok: boolean) => void }) {
   const { p, showToast } = useApp();
+  const me = from === 'me';
   const [pw, setPw] = useState('');
   const [pw2, setPw2] = useState('');
-  const [err, setErr] = useState('');
+  const [err, setErr] = useState<{ pw?: string; pw2?: string }>({});
   const [busy, setBusy] = useState(false);
   const save = async () => {
-    if (pw.length < 6) { setErr('密码至少 6 位'); return; }
-    if (pw !== pw2) { setErr('两次输入的不一样'); return; }
-    setErr(''); setBusy(true);
-    try { await cloud.updatePassword(pw); showToast(from === 'me' ? '密码改好啦' : '新密码设置好了'); onDone(); }
-    catch (e) { setErr((e as Error).message); }
-    setBusy(false);
+    if (busy) return;
+    if (pw.length < 6) { setErr({ pw: pw ? '密码至少 6 位' : '先填一下新密码' }); return; }
+    if (pw !== pw2) { setErr({ pw2: '两次输入的不一样' }); return; }
+    setErr({}); setBusy(true);
+    try { await cloud.updatePassword(pw); setBusy(false); if (me) showToast('密码改好啦'); onDone(true); }
+    catch (e) { setBusy(false); setErr({ pw2: (e as Error).message }); }
   };
   return (
-    <FullPage bg={p.blue} title={from === 'me' ? '修改密码' : '设置新密码'} onClose={onDone} closeIcon="chev" closeLabel="返回" testID="ob-setpw">
+    <FullPage bg={p.blue} title={me ? '修改密码' : '设置新密码'} onClose={() => onDone(false)} ob testID="ob-setpw">
       <View style={s.hs}><Tuan mood="idle" acc={['cap']} size={150} /></View>
+      <Txt f="b9" size={14} style={s.line}>{me ? '换一个新密码，下次用它登录' : '设置一个新密码，记牢哦'}</Txt>
       <FullCard>
         <Fl>新密码</Fl>
-        <Inp h={38} bg={p.bg} testID="ob-pw-new" value={pw} onChangeText={setPw} placeholder="至少 6 位" secureTextEntry autoCapitalize="none" />
+        <Inp h={38} bg={p.bg} err={!!err.pw} testID="ob-pw-new" value={pw} onChangeText={setPw} placeholder="至少 6 位" secureTextEntry autoCapitalize="none" autoComplete="new-password" />
+        <ErrLine msg={err.pw} />
         <Fl style={{ marginTop: 14 }}>再输一次</Fl>
-        <Inp h={38} bg={p.bg} testID="ob-pw-new2" value={pw2} onChangeText={setPw2} placeholder="两次要一样" secureTextEntry autoCapitalize="none" onSubmitEditing={save} />
-        <ErrLine msg={err} />
+        <Inp h={38} bg={p.bg} err={!!err.pw2} testID="ob-pw-new2" value={pw2} onChangeText={setPw2} placeholder="和上面一样" secureTextEntry autoCapitalize="none" autoComplete="new-password" onSubmitEditing={save} />
+        <ErrLine msg={err.pw2} />
+        {me ? <NoteS>改好后，其他设备需要用新密码重新登录</NoteS> : null}
       </FullCard>
-      <GoBtn testID="ob-pw-save" label={busy ? '保存中…' : '保存新密码'} icon="check" disabled={busy} onPress={save} />
+      <GoBtn testID="ob-pw-save" label={busy ? '请稍候…' : '保存新密码'} icon="check" disabled={busy} onPress={save} />
     </FullPage>
   );
 }
 
+/* ---------- 从重置邮件回来（PASSWORD_RECOVERY） ----------
+   Web 上 supabase 会在初始化时解析地址里的 #access_token=…&type=recovery 并登录，
+   所以要在模块加载时（hash 还没被清掉）先记下来；原生深链靠 onAuthStateChange。 */
+const recovery = {
+  on: Platform.OS === 'web' && typeof window !== 'undefined' && /type=recovery/.test(window.location?.hash ?? ''),
+  ls: new Set<() => void>(),
+};
+supabase.auth.onAuthStateChange(ev => { if (ev === 'PASSWORD_RECOVERY') { recovery.on = true; recovery.ls.forEach(f => f()); } });
+export function useRecovery() {
+  const [on, setOn] = useState(recovery.on);
+  useEffect(() => { const f = () => setOn(true); recovery.ls.add(f); return () => { recovery.ls.delete(f); }; }, []);
+  return [on, () => { recovery.on = false; setOn(false); }] as const;
+}
+/** 下次打开欢迎流程时直接停在哪一页（设置好新密码后回登录页 + 绿色 banner） */
+let nextStart: { mode: 'up' | 'in'; email: string; notice: Notice | null } | null = null;
+export const setNextStart = (v: typeof nextStart) => { nextStart = v; };
+
 /* ---------- 流程状态机 ---------- */
 
-type Scr = 'welcome' | 'auth' | 'verify' | 'forgot' | 'setpw';
+type Scr = 'welcome' | 'auth' | 'verify' | 'forgot';
 type Mode = 'up' | 'in';
 
 export function OnboardingFlow() {
   const { enterDemo, showToast } = useApp();
-  const [scr, setScr] = useState<Scr>('welcome');
-  const [mode, setMode] = useState<Mode>('up');
-  const [email, setEmail] = useState('');
-  const [banner, setBanner] = useState<string | null>(null);
+  const [start] = useState(() => { const v = nextStart; nextStart = null; return v; });
+  const [scr, setScr] = useState<Scr>(start ? 'auth' : 'welcome');
+  const [mode, setMode] = useState<Mode>(start?.mode ?? 'up');
+  const [email, setEmail] = useState(start?.email ?? '');
+  const [banner, setBanner] = useState<Notice | null>(start?.notice ?? null);
 
-  /* 从重置邮件回来：Supabase 识别到 PASSWORD_RECOVERY 后直接切到「设置新密码」 */
-  useEffect(() => {
-    const { data } = supabase.auth.onAuthStateChange(ev => { if (ev === 'PASSWORD_RECOVERY') setScr('setpw'); });
-    return () => { data.subscription.unsubscribe(); };
-  }, []);
-
-  const goAuth = (m: Mode, pre = '') => { setMode(m); setEmail(pre); setScr('auth'); };
+  const goAuth = (m: Mode, pre = '', n: Notice | null = null) => { setMode(m); setEmail(pre); setBanner(n); setScr('auth'); };
 
   if (scr === 'welcome') {
     return <Welcome onStart={() => goAuth('up')} onDemo={() => { enterDemo(); showToast('这是示例宝宝豆米 · 只能看不能改'); }} />;
@@ -424,24 +410,9 @@ export function OnboardingFlow() {
     );
   }
   if (scr === 'verify') {
-    return <VerifyPage email={email} onBack={() => goAuth('up', email)} onGoLogin={() => { setBanner('验证好了就登录吧'); goAuth('in', email); }} />;
+    return <VerifyPage email={email} onBack={() => goAuth('up', email)} onGoLogin={() => goAuth('in', email, { tone: 'ok', icon: 'check', t: '验证好了就登录吧', sub: '用刚才注册的邮箱和密码' })} />;
   }
-  if (scr === 'forgot') {
-    return <ForgotPage onBack={() => goAuth('in', email)} />;
-  }
-  return <SetPwPage from="recovery" onDone={() => goAuth('in', email)} />;
-}
-
-/* ---------- 过渡：已登录但还没有家庭 / 没有宝宝（第 3 步会用新页面替换） ---------- */
-
-export function FirstBabyStep({ onJoin }: { onJoin: () => void }) {
-  const { p, finishOnboarding } = useApp();
-  return (
-    <FullPage bg={p.pink} title="宝宝资料" testID="ob-profile">
-      <FullHero mood="happy" acc={['flower']} line="先认识一下宝宝吧～" />
-      <ProfileForm init={DEFAULT_BABY()} submitLabel="开始记录" onSubmit={b => finishOnboarding(b)} />
-    </FullPage>
-  );
+  return <ForgotPage initialEmail={email} onBack={() => goAuth('in', email)} />;
 }
 
 const s = StyleSheet.create({
@@ -450,10 +421,12 @@ const s = StyleSheet.create({
   feats: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 18 },
   feat: { width: 170, flexDirection: 'row', gap: 8, alignItems: 'center', borderWidth: 2.5, borderRadius: 22, padding: 10, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 1, shadowRadius: 0, elevation: 3 },
   featIc: { width: 36, height: 36, borderRadius: 13, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
-  banner: { borderWidth: 2.5, borderStyle: 'dashed', borderRadius: 18, paddingVertical: 10, paddingHorizontal: 12, marginBottom: 12 },
+  banner: { borderWidth: 2.5, borderStyle: 'dashed', borderRadius: 18, paddingVertical: 9, paddingHorizontal: 12, marginTop: 2, marginBottom: 14 },
+  bannerT: { flexDirection: 'row', gap: 6, alignItems: 'center' },
   segbig: { flexDirection: 'row', borderWidth: 2.5, borderRadius: 99, padding: 4, marginBottom: 14, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 1, shadowRadius: 0, elevation: 3 },
   segbigBtn: { flex: 1, height: 38, borderRadius: 99, alignItems: 'center', justifyContent: 'center' },
   hs: { width: 150, height: 150, alignSelf: 'center', marginBottom: -6 },
+  line: { textAlign: 'center', marginBottom: 12 },
   step: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 9 },
   stepB: { width: 26, height: 26, borderRadius: 9, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   agreeRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 12 },

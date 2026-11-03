@@ -11,11 +11,13 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppState, Platform } from 'react-native';
 import type { RealtimeChannel, Session } from '@supabase/supabase-js';
-import { cloudConfigured, supabase } from './supabase';
+import { cloudConfigured, supabase, SUPABASE_URL } from './supabase';
 import type { LocalRepo } from './local-repo';
 import type { Baby, BabyRecord, HealthData, HealthKind, Member, RecordType } from './types';
 import { HEALTH_KINDS } from './local-repo';
 import type { Kind } from '@/theme/tokens';
+import { CLOUD } from './cloud-config';
+const CLOUD_KEY = CLOUD.publishableKey;
 
 export type CloudLink = { userId: string; familyId: string; familyName: string; babyId: string; displayName: string; role: 'admin' | 'member'; lastPull: string | null; hPull?: Partial<Record<HealthKind, string | null>> };
 export type CloudStatus = 'off' | 'signedOut' | 'noFamily' | 'syncing' | 'synced' | 'offline';
@@ -26,7 +28,8 @@ type BabyRow = { id: string; family_id: string; name: string; birthday: string; 
 
 const KL = 'yj:v1:cloud', KO = 'yj:v1:outbox';
 export const isDemo = (id: string) => id.startsWith('demo-');
-export const RELATIONS = ['妈妈', '爸爸', '奶奶', '爷爷', '外婆', '外公'] as const;
+export const RELATIONS = ['妈妈', '爸爸', '奶奶', '爷爷', '外婆', '外公', '其他'] as const;
+export const DELETE_ACCOUNT_URL = process.env.EXPO_PUBLIC_DELETE_FN_URL || `${SUPABASE_URL}/functions/v1/delete-account`;
 
 const toRow = (r: BabyRecord, familyId: string) => ({
   id: r.id, baby_id: r.babyId, family_id: familyId, type: r.type, started_at: r.time, ended_at: r.endTime ?? null,
@@ -358,6 +361,8 @@ class CloudSync {
       email: email.trim(), password,
       options: { emailRedirectTo: redirect, ...(consent ? { data: { consent_at: consent.consentAt, policy_version: consent.policyVersion } } : {}) },
     });
+    /* 已注册的邮箱：不同配置下 Supabase 可能直接报 user_already_exists —— 同样当作「验证邮件已发送」 */
+    if (error && (error.code === 'user_already_exists' || /already registered/i.test(error.message ?? ''))) return 'confirm';
     if (error) throw new Error(authErrorText(error));
     return data.session ? 'ok' : 'confirm';
   }
@@ -389,6 +394,20 @@ class CloudSync {
       await this.linkFamily(data as string, displayName, 'admin', '我们家', carryLocal);
     });
   }
+  /** 首次使用「新建宝宝」：建家庭 + 我是管理员 + 建宝宝，一个 RPC（一个事务）完成；本机旧记录不带上云 */
+  createFamilyWithBaby(displayName: string, baby: Baby) {
+    return this.serial(async () => {
+      const { data, error } = await supabase.rpc('create_family_with_baby', {
+        p_name: '我们家', p_display_name: displayName,
+        p_baby: { id: baby.id, name: baby.name, birthday: baby.birthday, gender: baby.gender, avatar: baby.avatar, feeding: baby.feeding },
+      });
+      if (error) throw new Error(error.message.includes('too many') ? '最多创建 5 个家庭' : error.code === '22023' ? '宝宝资料不完整，检查一下再试' : authErrorText(error));
+      const row = (Array.isArray(data) ? data[0] : data) as { family_id: string; baby_id: string } | null;
+      if (!row?.family_id) throw new Error('出错了，请稍后再试');
+      await this.repo!.rawSaveBaby(baby);
+      await this.linkFamily(row.family_id, displayName, 'admin', '我们家', false);
+    });
+  }
   async createInvite(): Promise<{ code: string; expiresAt: string }> {
     if (!this.link) throw new Error('还没有加入家庭');
     const { data, error } = await supabase.rpc('create_invite', { p_family: this.link.familyId });
@@ -405,15 +424,23 @@ class CloudSync {
       if (!data) throw new Error('邀请码不对，或者已经过期 / 被用过了');
       if (was) await this.unlinkLocal();
       const { data: f } = await supabase.from('families').select('name').eq('id', data as string).maybeSingle();
-      /* 第一次连上家庭才把本机记录带过去；从一个家庭换到另一个家庭时，旧家庭的记录留在旧家庭 */
-      await this.linkFamily(data as string, displayName, 'member', f?.name ?? '我们家', !was);
+      /* 首次使用流程不带本机旧记录（必须登录才能记，本机不会有「未登录时记的」真实记录） */
+      await this.linkFamily(data as string, displayName, 'member', f?.name ?? '我们家', false);
     });
   }
-  /** 注销账号：服务器上删掉我的账号、我的成员身份；我独自一人的家庭连同宝宝和记录一起删除 */
+  /** 注销账号：调 Edge Function delete-account（服务端删数据 + 删 auth 用户）。
+      成功后断开同步、本地登出；失败抛错，保持登录（界面提示「注销没成功，请稍后再试」）。 */
   async deleteAccount() {
     await this.serial(async () => {
-      const { error } = await supabase.rpc('delete_account');
-      if (error) throw new Error(authErrorText(error));
+      const { data } = await supabase.auth.getSession();
+      const token = data.session?.access_token;
+      if (!token) throw new Error('auth');
+      const r = await fetch(DELETE_ACCOUNT_URL, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, apikey: CLOUD_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ confirm: 'DELETE' }),
+      });
+      if (r.status !== 200) throw new Error(`delete_account_${r.status}`);
       await this.unlinkLocal(); this.sessionUser = null;
       await supabase.auth.signOut({ scope: 'local' });
       this.set({ status: 'signedOut', email: null, userId: null });

@@ -6,7 +6,7 @@ import { Icon, Tuan } from '@/lib/svg';
 import type { IconName, Mood } from '@/lib/art';
 import { useApp } from '@/state/app-state';
 import { hard, Kind, kindColor } from '@/theme/tokens';
-import { fam, Txt } from './txt';
+import { fam, InkCtx, InkReset, Txt } from './txt';
 
 /* .sheet-ov + .sheet（230-232） */
 export function Sheet({ open, onClose, children, maxH = '88%', testID }: { open: boolean; onClose: () => void; children: ReactNode; maxH?: `${number}%`; testID?: string }) {
@@ -170,13 +170,13 @@ export function List({ children, style }: { children: ReactNode; style?: ViewSty
   const { p } = useApp();
   return <View style={[s.list, { backgroundColor: p.card, borderColor: p.ink }, hard(p, 4), style]}>{children}</View>;
 }
-export function Li({ icon, iconBg, t, sub, right, onPress, last, testID, iconNode }: { icon?: IconName; iconBg: string; t: string; sub?: string; right?: ReactNode; onPress?: () => void; last?: boolean; testID?: string; iconNode?: ReactNode }) {
+export function Li({ icon, iconBg, t, tColor, sub, right, onPress, last, testID, iconNode }: { icon?: IconName; iconBg: string; t: string; tColor?: string; sub?: string; right?: ReactNode; onPress?: () => void; last?: boolean; testID?: string; iconNode?: ReactNode }) {
   const { p } = useApp();
   const body = (
     <>
       <View style={[s.liIc, { backgroundColor: iconBg, borderColor: p.ink }]}>{iconNode ?? (icon ? <Icon name={icon} size={22} /> : null)}</View>
       <View style={{ flex: 1, minWidth: 0 }}>
-        <Txt f="b9" size={14.5}>{t}</Txt>
+        <Txt f="b9" size={14.5} color={tColor} numberOfLines={1}>{t}</Txt>
         {sub ? <Txt f="b7" size={11.5} color={p.sub} style={{ marginTop: 2 }}>{sub}</Txt> : null}
       </View>
       {right ?? (onPress ? <Icon name="chev" size={16} color={p.ink} /> : null)}
@@ -191,11 +191,12 @@ export function Free({ t, bg, dashed }: { t: string; bg?: string; dashed?: boole
   return <View style={[s.free, { backgroundColor: bg ?? p.green, borderColor: p.ink }, dashed && { borderStyle: 'dashed' }]}><Txt f="b9" size={10.5}>{t}</Txt></View>;
 }
 /* .inp（410-412）：输入框沿用「问团子」输入条的样式 */
-export function Inp(props: TextInputProps & { testID?: string; h?: number; bg?: string }) {
-  const { p } = useApp();
-  const { h, bg, ...rest } = props;
+export function Inp(props: TextInputProps & { testID?: string; h?: number; bg?: string; err?: boolean }) {
+  const { p, night } = useApp();
+  const { h, bg, err, ...rest } = props;
+  /* .inp.err（原型 1796-1797）：红框 + 浅红底 */
   return (
-    <View style={[s.inp, { backgroundColor: bg ?? p.card, borderColor: p.ink }]}>
+    <View style={[s.inp, { backgroundColor: err ? (night ? '#4a2a24' : '#FFF4F1') : bg ?? p.card, borderColor: err ? '#C9452F' : p.ink }]}>
       <TextInput placeholderTextColor={p.sub} {...rest} style={[{ flex: 1, minWidth: 0, fontSize: 14, color: p.ink, paddingVertical: h ? 0 : 8, height: h, outlineStyle: 'none' } as object, fam('b7'), props.style]} />
     </View>
   );
@@ -239,20 +240,24 @@ const s = StyleSheet.create({
 });
 
 /* .full 整页（293-306, 309）：彩色底 + 白色气泡圆 + 顶栏 + 团团 + 卡片 + 大按钮 */
-export function FullPage({ bg, title, onClose, children, testID, closeIcon = 'x', closeLabel = '关闭' }: { bg: string; title: string; onClose?: () => void; children: ReactNode; testID?: string; closeIcon?: IconName; closeLabel?: string }) {
-  const { p } = useApp();
+export function FullPage({ bg, title, onClose, children, testID, closeIcon = 'x', closeLabel = '关闭', ob, grow }: { bg: string; title: string; onClose?: () => void; children: ReactNode; testID?: string; closeIcon?: IconName; closeLabel?: string; ob?: boolean; grow?: boolean }) {
+  const { p, night } = useApp();
+  /* ob = 首次使用流程的页面（原型 .full.ob）：返回键用 ic.back(20)；夜间时直接放在彩色底上的字用 #2a1f16 */
+  const icon: IconName = ob ? 'back' : closeIcon;
   return (
     <View testID={testID} style={[fs.full, { backgroundColor: bg }]}>
-      <ScrollView contentContainerStyle={fs.pad} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-        <View pointerEvents="none" style={[fs.blob, { width: 260, height: 260, right: -90, top: 60 }]} />
-        <View pointerEvents="none" style={[fs.blob, { width: 160, height: 160, left: -60, top: 300 }]} />
-        <View style={fs.bar}>
-          {onClose ? <Pressable testID="full-close" accessibilityLabel={closeLabel} onPress={onClose} style={({ pressed }) => [fs.iconbtn, { backgroundColor: p.card, borderColor: p.ink }, pressed ? { transform: [{ translateY: 3 }] } : hard(p, 3)]}><Icon name={closeIcon} size={18} style={closeIcon === 'chev' ? { transform: [{ rotate: '180deg' }] } : undefined} /></Pressable> : <View style={{ width: 42 }} />}
-          <Txt f="h" size={22}>{title}</Txt>
-          <View style={{ width: 42 }} />
-        </View>
-        {children}
-      </ScrollView>
+      <InkCtx.Provider value={ob && night ? '#2a1f16' : null}>
+        <ScrollView contentContainerStyle={[fs.pad, grow && { flexGrow: 1 }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+          <View pointerEvents="none" style={[fs.blob, { width: 260, height: 260, right: -90, top: 60 }]} />
+          <View pointerEvents="none" style={[fs.blob, { width: 160, height: 160, left: -60, top: 300 }]} />
+          {title || onClose ? <View style={fs.bar}>
+            {onClose ? <Pressable testID="full-close" accessibilityLabel={ob ? '返回' : closeLabel} onPress={onClose} style={({ pressed }) => [fs.iconbtn, { backgroundColor: p.card, borderColor: p.ink }, pressed ? { transform: [{ translateY: 3 }] } : hard(p, 3)]}><Icon name={icon} size={ob ? 20 : 18} color={p.ink} style={!ob && closeIcon === 'chev' ? { transform: [{ rotate: '180deg' }] } : undefined} /></Pressable> : <View style={{ width: 42 }} />}
+            <Txt f="h" size={22}>{title}</Txt>
+            <View style={{ width: 42 }} />
+          </View> : null}
+          {children}
+        </ScrollView>
+      </InkCtx.Provider>
     </View>
   );
 }
@@ -266,14 +271,15 @@ export function FullHero({ mood, acc, line }: { mood: Mood; acc: string[]; line?
 }
 export function FullCard({ children, style }: { children: ReactNode; style?: ViewStyle }) {
   const { p } = useApp();
-  return <View style={[fs.card, { backgroundColor: p.card, borderColor: p.ink }, hard(p, 5), style]}>{children}</View>;
+  return <InkReset value={null}><View style={[fs.card, { backgroundColor: p.card, borderColor: p.ink }, hard(p, 5), style]}>{children}</View></InkReset>;
 }
 /* .full .btn.go（306） */
-export function GoBtn({ label, icon = 'check', onPress, disabled, testID }: { label: string; icon?: IconName; onPress: () => void; disabled?: boolean; testID?: string }) {
+export function GoBtn({ label, icon = 'check', onPress, disabled, off, testID }: { label: string; icon?: IconName; onPress: () => void; disabled?: boolean; off?: boolean; testID?: string }) {
   const { p } = useApp();
+  /* off = 原型 .btn.go.off（半透明但仍可点，点了给出提示）；disabled = 真的不能点 */
   return (
-    <Pressable testID={testID} disabled={disabled} onPress={onPress} style={({ pressed }) => [fs.go, { backgroundColor: p.card, borderColor: p.ink }, pressed ? { transform: [{ translateY: 4 }, { scale: 0.98 }] } : hard(p, 4), disabled && { opacity: 0.45 }]}>
-      <Icon name={icon} size={22} color={p.ink} /><Txt f="b9" size={18}>{label}</Txt>
+    <Pressable testID={testID} disabled={disabled} onPress={onPress} style={({ pressed }) => [fs.go, { backgroundColor: p.card, borderColor: p.ink }, pressed && !off ? { transform: [{ translateY: 4 }, { scale: 0.98 }] } : hard(p, 4), off && { opacity: 0.45 }]}>
+      <Icon name={icon} size={22} color={p.ink} /><Txt f="b9" size={18} color={p.ink}>{label}</Txt>
     </Pressable>
   );
 }

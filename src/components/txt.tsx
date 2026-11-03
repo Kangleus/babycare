@@ -1,3 +1,4 @@
+import { createContext, useContext } from 'react';
 import { Platform, Text, TextProps, TextStyle } from 'react-native';
 import { useApp } from '@/state/app-state';
 import type { Seg } from '@/lib/calc';
@@ -14,9 +15,15 @@ const CJK_B = ',"PingFang SC","Noto Sans SC","Noto Sans CJK SC","Microsoft YaHei
 const CJK_H = ',"Yuanti SC","YouYuan","PingFang SC","Noto Sans SC","Noto Sans CJK SC","Microsoft YaHei",sans-serif';
 export const fam = (f: Fam): TextStyle => Platform.OS === 'web' ? { fontFamily: FAM[f] + (f === 'h' ? CJK_H : CJK_B), fontWeight: W[f] } : { fontFamily: FAM[f] };
 
+/* 默认文字色覆盖：原型 body.night .full.ob{color:#2a1f16} —— 夜间时彩色整页上「直接放在底色上的字」用深色，
+   而卡片 / 按钮 / banner 里面仍是 var(--ink)。FullPage 提供深色，FullCard / GoBtn 等再用 InkReset 恢复成 null。 */
+export const InkCtx = createContext<string | null>(null);
+export const InkReset = InkCtx.Provider;
+
 export function Txt({ f = 'b4', size = 14, color, style, ...rest }: TextProps & { f?: Fam; size?: number; color?: string }) {
   const { p } = useApp();
-  return <Text {...rest} style={[{ ...fam(f), fontSize: size, color: color ?? p.ink }, style]} />;
+  const ink = useContext(InkCtx);
+  return <Text {...rest} style={[{ ...fam(f), fontSize: size, color: color ?? ink ?? p.ink }, style]} />;
 }
 
 /* .num：Nunito 900，letter-spacing -.01em */
