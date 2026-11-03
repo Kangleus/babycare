@@ -10,6 +10,7 @@ import { voice } from '@/state/voice';
 import { LVACC } from '@/data/mock';
 import { hard } from '@/theme/tokens';
 import { IS_WEB } from './chrome';
+import { MicRipple } from './ob-home';
 import { Txt } from './txt';
 
 function TabBtn({ isFocused, label, icon, ...rest }: TabTriggerSlotProps & { label: string; icon: IconName }) {
@@ -61,6 +62,7 @@ function Mic() {
         onResponderTerminationRequest={() => false}
         onResponderGrant={grant} onResponderMove={move} onResponderRelease={release} onResponderTerminate={release}
         style={[s.mic, { backgroundColor: p.yellow, borderColor: p.ink }, IS_WEB && ({ userSelect: 'none', touchAction: 'none', cursor: 'pointer' } as object), down ? { transform: [{ translateY: 5 }, { scale: 0.94 }] } : hard(p, 5)]}>
+        <MicRipple />
         <Animated.View pointerEvents="none" style={[s.ring, { borderColor: p.pink, transform: [{ rotate: rot }] }]} />
         <View style={{ marginTop: 6 }} pointerEvents="none"><Tuan mood={night ? 'drowsy' : 'idle'} acc={night ? ['cap'] : LVACC[lvl]} size={78} /></View>
         <View style={s.lbl} pointerEvents="none"><Txt f="b9" size={10.5}>按住说话</Txt></View>

@@ -10,6 +10,7 @@ import { addDays, ageText, minOf, startOfDay } from '@/lib/time';
 import type { AvatarKey } from '@/data/types';
 import { hard, Kind, kindColor } from '@/theme/tokens';
 import { ConfirmSheet, ConfirmOpts } from './confirm';
+import { EmptyTimeline, FreshPred, useFresh } from './ob-home';
 import { fam, numStyle, Segs, Txt } from './txt';
 
 import { useLvAcc } from '@/state/hooks';
@@ -64,17 +65,21 @@ function useSleepWeek() {
 }
 
 export function Greet() {
-  const { p, night, events, baby, now, openTrend } = useApp();
+  const { p, night, events, records, baby, now, openTrend } = useApp();
   const T = totals(events, minOf(now));
   const wk = useSleepWeek();
+  const { fresh } = useFresh();
   const B = (t: string | number) => <Text style={{ ...fam('b9'), color: '#E5738A' }}>{t}</Text>;
   return (
     <View style={s.greet}>
       <View style={[s.bub, { backgroundColor: p.card, borderColor: p.ink }, hard(p, 3)]}>
         <Txt f="b7" size={13.5} style={{ lineHeight: 19.575 }} testID="greet">
-          {night ? <>夜深啦，小声说一句就好，{B('团团')}陪你守夜～</> : <>{hello(now.getHours())}！{baby?.name}今天喝了 {B(T.feeds)} 顿奶，睡了 {B(dur(T.sl))} 啦</>}
+          {night ? <>夜深啦，小声说一句就好，{B('团团')}陪你守夜～</>
+            : fresh && !records.length ? <>你好呀！我是{B('团团')}，以后{baby?.name}的吃睡拉都交给我记～</>
+            : fresh && events.length ? <>记得真棒！今天记了 {B(events.length)} 条，接着说就好～</>
+            : <>{hello(now.getHours())}！{baby?.name}今天喝了 {B(T.feeds)} 顿奶，睡了 {B(dur(T.sl))} 啦</>}
         </Txt>
-        {wk ? (
+        {wk && !fresh ? (
           <Pressable onPress={() => openTrend('sleep')} style={[s.gchg, { backgroundColor: p.blueS, borderColor: p.ink }]}>
             <Icon name="sleep" size={13} />
             <Txt f="b9" size={11.5} style={{ lineHeight: 16.7 }}>{wk}</Txt>
@@ -87,6 +92,11 @@ export function Greet() {
 }
 
 export function Pred() {
+  const { fresh } = useFresh();
+  return fresh ? <FreshPred /> : <RealPred />;
+}
+
+function RealPred() {
   const { p, night, events, records, now, baby } = useApp();
   const P = predict(records, events, now), nowMin = minOf(now);
   /* 原型 97/104/106：夜间 .pred 文字固定深色、胶囊底 rgba(0,0,0,.18) */
@@ -191,14 +201,15 @@ function SwipeRow({ e, children, onDelete, onOpen }: { e: Ev; children: React.Re
 }
 
 export function Timeline() {
-  const { p, events, night, openRecord, deleteRecord, showToast } = useApp();
+  const { p, events, records, night, openRecord, deleteRecord, showToast } = useApp();
+  const { empty } = useFresh();
   const [confirm, setConfirm] = useState<ConfirmOpts | null>(null);
   const evs = [...events].sort((a, b) => tm(b.start) - tm(a.start) || a.rec.createdAt.localeCompare(b.rec.createdAt));
   return (
     <>
       <SecTitle title="今日时间线" right={<View style={[s.chip, { backgroundColor: p.card, borderColor: p.line }]}><Txt size={10.5} color={p.sub} testID="tl-count">{events.length} 条记录</Txt></View>} />
       <View>
-        {evs.length ? null : <Txt f="b8" size={12} color={p.sub} style={{ textAlign: 'center', marginVertical: 12 }}>今天还没有记录，点上面卡片的「+」记第一条吧</Txt>}
+        {evs.length ? null : empty ? <EmptyTimeline /> : <Txt f="b8" size={12} color={p.sub} style={{ textAlign: 'center', marginVertical: 12 }}>今天还没有记录，点上面卡片的「+」记第一条吧</Txt>}
         {evs.map((e, i) => {
           const t = evTitle(e), col = kindColor(p, e.type), voice = e.src === 'voice';
           return (
@@ -227,7 +238,7 @@ export function Timeline() {
           );
         })}
       </View>
-      <Txt f="b7" size={11} color={p.sub} style={s.foot}>点上面的卡片，看近 7 天、30 天的趋势～</Txt>
+      <Txt f="b7" size={11} color={p.sub} style={s.foot}>{records.length ? '点上面的卡片，看近 7 天、30 天的趋势～' : '记录只同步给你邀请的家人'}</Txt>
       <ConfirmSheet c={confirm} onClose={() => setConfirm(null)} />
     </>
   );
