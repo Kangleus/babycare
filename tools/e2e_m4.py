@@ -5,6 +5,7 @@ import asyncio, datetime, json, re, sys
 from playwright.async_api import async_playwright
 from PIL import Image, ImageChops
 import paths
+import e2e_common as common
 O = paths.sub('m4')
 BASE = paths.BASE_URL
 PROTO = paths.require_proto()
@@ -23,6 +24,7 @@ async def main():
   async with async_playwright() as pw:
     b=await pw.chromium.launch(executable_path=paths.CHROME,args=['--no-sandbox'])
     ctx=await b.new_context(viewport={'width':390,'height':844},device_scale_factor=2,accept_downloads=True)
+    await common.install_routes(ctx); await common.seed_context(ctx)
     await ctx.grant_permissions(['clipboard-read','clipboard-write'],origin=BASE)
     r=await ctx.new_page();errs=[]
     r.on('pageerror',lambda e:errs.append('PAGEERR '+str(e)))
@@ -39,9 +41,7 @@ async def main():
     def in_view(bb): return bb and 0<=bb['y']<844
 
     # ---------- onboarding (demo data) ----------
-    await r.goto(BASE+'/'); await r.wait_for_timeout(2500)
-    await T('ob-agree').click(); await T('ob-continue').click(); await r.wait_for_timeout(600)
-    await T('pf-name').fill('豆米'); await T('pf-bd').fill('2026-03-28'); await T('pf-gender-girl').click(); await T('pf-submit').click(); await r.wait_for_timeout(2200)
+    await common.login(r, BASE)
 
     # ---------- 1. home 体温卡片 → 健康 · 病程记录 ----------
     # CI 的 runner 比本机慢，固定 1.2 秒偶尔不够；改成等元素出现（真跳不过去照样失败，只是慢一点）
@@ -183,7 +183,7 @@ async def main():
     check('recovered: no active episode, archived in 过往病程', '进行中' not in t and await T('past-list').count()==1, t[:120])
     h=await health_store(); ep=[e for e in h['episodes'] if e['title']=='发烧'][0]
     check('episode status recovered + end date', ep['status']=='recovered' and ep['endDate']=='2026-10-31', ep)
-    await T(f"past-demo-ep1").click(); await r.wait_for_timeout(600)
+    await T("past-e2e-ep1").click(); await r.wait_for_timeout(600)
     check('browse past episode (幼儿急疹 curve + timeline)', '退烧 · 前胸后背出疹' in await T('past-tl').inner_text())
     await into('past-list'); await shot('11-past-episodes.png')
 

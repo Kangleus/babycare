@@ -4,6 +4,7 @@ import asyncio, datetime, os, sys
 from playwright.async_api import async_playwright
 from PIL import Image, ImageChops
 import paths
+import e2e_common as common
 O = paths.sub('m1', 'anim')
 BASE = paths.BASE_URL
 DUR={'breath':2.6,'blink':4.2,'ring':1.6,'bubble':2.4,'zz':2.6,'sway':3.0}
@@ -23,10 +24,10 @@ async def main():
   async with async_playwright() as pw:
     b=await pw.chromium.launch(executable_path=paths.CHROME,args=['--no-sandbox'])
     ctx=await b.new_context(viewport={'width':390,'height':844},device_scale_factor=2)
+    await common.install_routes(ctx); await common.seed_context(ctx)
     r=await ctx.new_page(); T=r.get_by_test_id; errs=[]
     await r.clock.set_system_time(datetime.datetime(2026,10,31,10,20,0))
-    await r.goto(BASE+'/'); await r.wait_for_timeout(2500)
-    await T('ob-agree').click(); await T('ob-continue').click(); await r.wait_for_timeout(500); await T('pf-submit').click(); await r.wait_for_timeout(2500)
+    await common.login(r, BASE)
     n=await ctx.new_page(); n.on('pageerror',lambda e:errs.append(str(e))); n.on('console',lambda m:errs.append(m.text) if m.type=='error' else None)
     await n.clock.set_system_time(datetime.datetime(2026,10,31,10,20,0))
     await n.goto(BASE+'/?mascot=native'); await n.wait_for_timeout(3000)

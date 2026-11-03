@@ -8,10 +8,11 @@
 6) 夜间模式下紧急卡仍可见
 7) S0 与原型「问团子」页并排像素对比（打印差异，不静默）
 跑法：npm run test:web（会自动构建 + 起服务 + 收尾）"""
-import asyncio, datetime, sys
+import asyncio, datetime, re, sys
 from playwright.async_api import async_playwright
 from PIL import Image, ImageChops
 import paths
+import e2e_common as common
 O = paths.sub('m5-ask')
 BASE = paths.BASE_URL
 PROTO = paths.require_proto()
@@ -45,12 +46,11 @@ async def main():
     async with async_playwright() as pw:
         b = await pw.chromium.launch(executable_path=paths.CHROME, args=['--no-sandbox'])
         ctx = await b.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=2)
+        await common.install_routes(ctx); await common.seed_context(ctx)
         r = await ctx.new_page(); T = r.get_by_test_id; errs = []
         r.on('pageerror', lambda e: errs.append('PAGEERR ' + str(e)))
         await r.clock.set_system_time(NOW)
-        await r.goto(BASE + '/'); await r.wait_for_timeout(3000)
-        await T('ob-agree').click(); await T('ob-continue').click(); await r.wait_for_timeout(600)
-        await T('pf-submit').click(); await r.wait_for_timeout(2500)
+        await common.login(r, BASE)
 
         # ---------- 1. S0 ----------
         await tab(r, '问团子')
@@ -85,12 +85,25 @@ async def main():
         await T('sm-again').click(); await r.wait_for_timeout(300)
         await r.mouse.click(195, 70); await r.wait_for_timeout(600)
 
-        # ---------- 5. 未登录问普通问题 → S5 ----------
-        await T('ask-input').fill('这周奶量正常吗？'); await T('ask-send').click(); await r.wait_for_timeout(900)
-        after = await T('ask-msg-bot').last.inner_text() if await T('ask-msg-bot').count() else ''
-        body2 = await r.locator('body').inner_text()
-        check('未登录 → 提示登录后才能翻记录', '登录后团团才能翻记录' in body2 and '加入家庭' in body2, (after or body2)[:60])
-        await r.screenshot(path=O + 's5-login.png')
+        # ---------- 5. 示例模式问普通问题 → 预置回答（不调 AI、不计次、零请求） ----------
+        # 正式版必须登录，所以「没登录」这件事只剩下欢迎页里的只读示例模式。
+        ctx2 = await b.new_context(viewport={'width': 390, 'height': 844})
+        await ctx2.route(re.compile(r'/auth/v1/|/rest/v1/'), lambda route: route.fulfill(
+            status=200, content_type='application/json', body='{}',
+            headers={'access-control-allow-origin': '*'}))
+        d = await ctx2.new_page(); TD = d.get_by_test_id
+        hits = []
+        d.on('request', lambda q: hits.append(q.url) if ('supabase.co' in q.url or 'functions/v1' in q.url) else None)
+        await d.clock.set_system_time(datetime.datetime(2026, 10, 31, 10, 20, 0))
+        await d.goto(BASE + '/'); await TD('ob-welcome').wait_for(state='visible', timeout=60000)
+        await TD('ob-demo').click(); await d.wait_for_timeout(1200)
+        await tab(d, '问团子')
+        await TD('ask-input').fill('豆米这周奶量怎么样？'); await TD('ask-send').click(); await d.wait_for_timeout(900)
+        ans = await TD('ask-msg-bot').last.inner_text() if await TD('ask-msg-bot').count() else ''
+        check('示例模式问团子 → 给预置回答（含演示数据）', '示例' in ans or '豆米' in ans, ans[:60])
+        check('示例模式问团子 → 不联网（零请求）', len(hits) == 0, hits[:3])
+        await d.screenshot(path=O + 's5-demo-ask.png')
+        await ctx2.close()
 
         # ---------- 6. 夜间模式紧急卡 ----------
         await tab(r, '我的')

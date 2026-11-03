@@ -3,6 +3,7 @@ import asyncio, datetime, sys, statistics
 from playwright.async_api import async_playwright
 from PIL import Image, ImageChops
 import paths
+import e2e_common as common
 O = paths.sub('m2')
 BASE = paths.BASE_URL
 PROTO = paths.require_proto()
@@ -10,14 +11,14 @@ FZ='*,*:before,*:after{animation:none!important;transition:none!important}'
 STARS="()=>[...document.querySelectorAll(SEL)].map(e=>{const b=e.getBoundingClientRect();return [b.x+b.width/2,b.y+b.height/2,b.width,+getComputedStyle(e).opacity]})"
 async def onboard(r):
   T=r.get_by_test_id
-  await r.goto(BASE+'/'); await r.wait_for_timeout(2500)
-  await T('ob-agree').click(); await T('ob-continue').click(); await r.wait_for_timeout(500); await T('pf-submit').click(); await r.wait_for_timeout(2500)
+  await common.login(r, BASE)
 async def main():
   ok=True
   async with async_playwright() as pw:
     b=await pw.chromium.launch(executable_path=paths.CHROME,args=['--no-sandbox'])
     # 1) 静态对比：两边星星都停在 opacity .55（RN 用系统「减少动态效果」，原型用注入样式）
     ctx=await b.new_context(viewport={'width':390,'height':844},device_scale_factor=2,reduced_motion='reduce')
+    await common.install_routes(ctx); await common.seed_context(ctx)
     r=await ctx.new_page(); errs=[]; r.on('pageerror',lambda e:errs.append(str(e)))
     await r.clock.set_system_time(datetime.datetime(2026,10,31,10,20,0)); await onboard(r)
     await r.get_by_label('夜间模式').first.click(); await r.wait_for_timeout(3500)
@@ -36,6 +37,7 @@ async def main():
     print('max star position/size error (css px): %.3f'%perr); ok&= len(rs)==22 and perr<0.5
     # 2) 动画：正常动态下 RN 星星在 .2–.9 之间往返，周期 3s（两段 alternate）
     ctx2=await b.new_context(viewport={'width':390,'height':844})
+    await common.install_routes(ctx2); await common.seed_context(ctx2)
     n=await ctx2.new_page(); n.on('pageerror',lambda e:errs.append(str(e))); await onboard(n)
     await n.get_by_label('夜间模式').first.click(); await n.wait_for_timeout(3200)
     samples=[]

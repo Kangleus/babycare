@@ -5,6 +5,7 @@ import asyncio, datetime, re, sys
 from playwright.async_api import async_playwright
 from PIL import Image, ImageChops
 import paths
+import e2e_common as common
 O = paths.O
 BASE = paths.BASE_URL
 PROTO = paths.require_proto()
@@ -60,6 +61,8 @@ async def main():
   async with async_playwright() as pw:
     b=await pw.chromium.launch(executable_path=paths.CHROME,args=['--no-sandbox'])
     ctx=await b.new_context(viewport={'width':390,'height':844},device_scale_factor=2)
+    # 正式版必须登录：用公共装置造出「已登录 + 有家庭 + 有 14 天记录」，不连真后端
+    await common.install_routes(ctx); await common.seed_context(ctx)
     r=await ctx.new_page();errs=[]
     r.on('pageerror',lambda e:errs.append('PAGEERR '+str(e)))
     r.on('console',lambda m:errs.append('CONSOLE '+m.text) if m.type=='error' else None)
@@ -71,19 +74,9 @@ async def main():
     async def home():
       await r.get_by_text('今天',exact=True).last.click(); await r.wait_for_timeout(500)
 
-    # ---------- 1. onboarding ----------
-    await r.goto(BASE+'/'); await r.wait_for_timeout(3000)
-    check('onboarding: consent page shown on first run', await T('ob-consent').is_visible())
-    await shot('m2/01-onboarding-consent.png')
-    check('consent: continue disabled until checked', await T('ob-continue').get_attribute('aria-disabled')=='true')
-    await T('ob-agree').click(); await T('ob-continue').click(); await r.wait_for_timeout(700)
-    check('onboarding: profile page', await T('ob-profile').is_visible())
-    await T('pf-bd').fill('2026-13-40'); await shot('m2/02-onboarding-profile-invalid.png')
-    check('profile: invalid birthday blocks submit', await T('pf-submit').get_attribute('aria-disabled')=='true')
-    await T('pf-name').fill('豆米'); await T('pf-bd').fill('2026-03-28'); await T('pf-gender-girl').click()
-    await shot('m2/03-onboarding-profile.png')
-    await T('pf-submit').click(); await r.wait_for_timeout(2000)
-    check('home after onboarding', await T('tl-count').is_visible())
+    # ---------- 1. 已登录进首页（登录流程本身由 tools/e2e_onboarding.py 覆盖） ----------
+    await common.login(r, BASE)
+    check('home after login', await T('tl-count').is_visible())
     check('age line computed from birthday', '7 个月 3 天' in await r.locator('body').inner_text())
     await shot('m1/01-home.png')
     # compare with prototype
@@ -93,7 +86,10 @@ async def main():
     # scrolled compare (the overlap zone)
     await a.evaluate("[...document.querySelectorAll('.page')].forEach(p=>p.scrollTop=420)")
     await a.wait_for_timeout(300); await a.screenshot(path=O+'m1/proto-home-scrolled.png')
-    await r.mouse.move(195,500); await r.mouse.wheel(0,420); await r.wait_for_timeout(600); await r.screenshot(path=O+'m1/rn-home-scrolled.png')
+    # 用 scrollTop 精确设 420，和原型 .page 的 scrollTop=420 同口径；
+    # 之前用滚轮会带惯性，取景多滚几十像素，对比虚高到 10%+
+    await r.evaluate("""[...document.querySelectorAll('div')].filter(e=>e.scrollHeight>e.clientHeight+100&&getComputedStyle(e).overflowY!=='visible').forEach(e=>{e.scrollTop=420})""")
+    await r.wait_for_timeout(600); await r.screenshot(path=O+'m1/rn-home-scrolled.png')
     side('m1/proto-home-scrolled.png','m1/rn-home-scrolled.png','m1/compare-home-scrolled.png')
     await r.mouse.wheel(0,-2000); await r.wait_for_timeout(300)
     await a.close()
@@ -226,7 +222,7 @@ async def main():
       still_onboarded=False
       print('  [diag] reload 后 60s 内 tl-count 仍不可见')
       print('  [diag] body:', (await r.locator('body').inner_text())[:200].replace(chr(10),' | '))
-      print('  [diag] ob-consent visible:', await T('ob-consent').is_visible())
+      print('  [diag] ob-welcome visible:', await T('ob-welcome').is_visible())
       print('  [diag] tl-count 存在:', await T('tl-count').count())
     check('reload: still onboarded', still_onboarded)
     after=await count(); cards_after=[await r.locator('[data-testid^="card-"][data-testid$="-v"]').nth(i).get_attribute('data-testid') for i in range(6)]
@@ -243,13 +239,13 @@ async def main():
     await T('pf-name').fill('小豆米'); await T('pf-av-crown').click(); await T('pf-gender-boy').click(); await T('pf-bd').fill('2026-04-01')
     await T('pf-submit').click(); await r.wait_for_timeout(900)
     check('profile edit saved', await txt('me-name')=='小豆米')
-    await T('invite').click(); await r.wait_for_timeout(800); await shot('m2/06-invite-signed-out.png')
-    check('invite (signed out) asks to log in first', await r.get_by_text('登录并创建家庭后就能邀请').count()>0); await T('invite-ok').click(); await r.wait_for_timeout(600)
-    await T('login').click(); await r.wait_for_timeout(900); await shot('m2/07-login.png')
-    check('login page has email + password', await T('login-email').is_visible() and await T('login-password').is_visible())
-    await T('login-email').fill('not-an-email'); await T('login-password').fill('123456'); await T('login-go').click(); await r.wait_for_timeout(400)
-    check('login validates email locally (no network call)', (await txt('login-err'))=='邮箱格式不对')
-    await T('full-close').click(); await r.wait_for_timeout(700)
+    # 正式版必须登录才能用：这里已经是登录态，所以「邀请家人」直接出邀请码；
+    # 「未登录时提示去登录」的场景改由 tools/e2e_onboarding.py 覆盖（欢迎页 → 注册）。
+    await T('invite').click(); await r.wait_for_timeout(900); await shot('m2/06-invite.png')
+    code = ''.join([await T(f'invite-c{i}').inner_text() for i in range(6)])
+    check('invite: 已登录 → 6 位邀请码 + 48 小时有效期', len(code.strip()) == 6 and '48 小时' in await txt('invite-exp'), code)
+    await T('invite-ok').click(); await r.wait_for_timeout(600)
+    check('我的：显示已登录账号', 'e2e@test.local' in await r.locator('body').inner_text())
     await T('policy').scroll_into_view_if_needed(); await T('policy').click(); await r.wait_for_timeout(800); await shot('m2/08-policy.png'); await r.get_by_text('关闭',exact=True).last.click(); await r.wait_for_timeout(700)
     await T('about').scroll_into_view_if_needed(); await T('about').click(); await r.wait_for_timeout(800); await shot('m2/09-about.png'); await r.get_by_text('关闭',exact=True).last.click(); await r.wait_for_timeout(700)
     await T('night-toggle').scroll_into_view_if_needed(); await T('night-toggle').click(); await r.wait_for_timeout(900); await shot('m2/10-me-night.png')
@@ -257,17 +253,15 @@ async def main():
     check('home header uses new name', '小豆米' in await r.locator('body').inner_text())
     await r.get_by_text('我的',exact=True).last.click(); await r.wait_for_timeout(700)
     await T('night-toggle').click(); await r.wait_for_timeout(600)
-    await T('reset-demo').scroll_into_view_if_needed(); await T('reset-demo').click(); await r.wait_for_timeout(700); await shot('m2/12-reset-confirm.png')
-    await T('confirm-ok').click(); await r.wait_for_timeout(1200)
-    await home(); n_demo=await count(); check('reset demo restores 12 demo events', n_demo==12, n_demo)
-    await r.get_by_text('我的',exact=True).last.click(); await r.wait_for_timeout(700)
+    # 「重置演示数据」已随首次流程改版移除（示例模式在欢迎页、且不写本地库），只剩「清空全部数据」
     await T('clear-all').scroll_into_view_if_needed(); await T('clear-all').click(); await r.wait_for_timeout(700); await shot('m2/13-clear-confirm-1.png')
     await T('confirm-ok').click(); await r.wait_for_timeout(1200); await shot('m2/14-clear-confirm-2.png')
     check('clear all asks twice', await T('confirm-sheet').is_visible())
-    await T('confirm-ok').click(); await r.wait_for_timeout(1800)
-    check('clear all → back to onboarding', await T('ob-consent').is_visible())
-    await r.reload(); await r.wait_for_timeout(2500)
-    check('after clear + reload still onboarding', await T('ob-consent').is_visible())
+    await T('confirm-ok').click(); await r.wait_for_timeout(2000)
+    # 清空会先退出登录再清本机数据 → 回到欢迎页
+    check('clear all → 回到欢迎页', await T('ob-welcome').is_visible())
+    await r.reload(); await r.wait_for_timeout(3000)
+    check('after clear + reload 仍在欢迎页', await T('ob-welcome').is_visible())
 
     print('\nconsole/page errors:',errs); check('no console errors', not errs, errs)
     print(f'\n{len(ok)} passed, {len(bad)} failed', bad)

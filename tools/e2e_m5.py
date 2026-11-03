@@ -11,6 +11,7 @@ import asyncio, datetime, json, sys
 from playwright.async_api import async_playwright
 from PIL import Image, ImageChops
 import paths
+import e2e_common as common
 O = paths.sub('m5')
 BASE = paths.BASE_URL
 PROTO = paths.require_proto()
@@ -34,10 +35,8 @@ def diff(name, A, B):
 
 
 async def onboard(r):
-    T = r.get_by_test_id
-    await r.goto(BASE + '/'); await r.wait_for_timeout(3000)
-    await T('ob-agree').click(); await T('ob-continue').click(); await r.wait_for_timeout(600)
-    await T('pf-submit').click(); await r.wait_for_timeout(2500)
+    # 正式版必须登录：用 e2e_common 播种「已登录 + 有家庭 + 有 14 天记录」，不连真后端
+    await common.login(r, BASE)
 
 
 async def tab(r, name):
@@ -79,6 +78,7 @@ async def main():
     async with async_playwright() as pw:
         b = await pw.chromium.launch(executable_path=paths.CHROME, args=['--no-sandbox'])
         ctx = await b.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=2)
+        await common.install_routes(ctx); await common.seed_context(ctx)
         await ctx.grant_permissions(['clipboard-read', 'clipboard-write'], origin=BASE)
         r = await ctx.new_page(); T = r.get_by_test_id; errs = []
         r.on('pageerror', lambda e: errs.append('PAGEERR ' + str(e)))
