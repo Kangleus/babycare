@@ -110,6 +110,7 @@ function Shell() {
       <View style={{ flex: 1 }}>
         <OnboardingFlow />
         <StatusBarMock />
+        <NightTint />
         <Toast />
       </View>
     );

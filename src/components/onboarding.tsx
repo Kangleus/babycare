@@ -107,6 +107,38 @@ function SegBig<T extends string>({ opts, value, onChange, testID }: { opts: { k
   );
 }
 
+/** .ob-step：带编号徽章的一步（原型：黄色方块 b + 说明，虚线分隔） */
+function ObStep({ n, t, first }: { n: number; t: string; first?: boolean }) {
+  const { p } = useApp();
+  return (
+    <View style={[s.step, first ? null : { borderTopWidth: 2, borderStyle: 'dashed', borderTopColor: p.line }]}>
+      <View style={[s.stepB, { backgroundColor: p.yellow, borderColor: p.ink }]}><Txt f="b9" size={12.5}>{n}</Txt></View>
+      <Txt f="b9" size={13} style={{ flex: 1, lineHeight: 19 }}>{t}</Txt>
+    </View>
+  );
+}
+
+/** .ob-mail：邮箱药丸（黄底、可折行） */
+function ObMail({ mail }: { mail: string }) {
+  const { p } = useApp();
+  return (
+    <View style={{ alignItems: 'center', marginTop: 4 }}>
+      <View style={{ backgroundColor: p.yellowS, borderRadius: 10, paddingHorizontal: 6, paddingVertical: 1 }}>
+        <Txt f="b9" size={15} style={{ wordBreak: 'break-all' } as object}>{mail}</Txt>
+      </View>
+    </View>
+  );
+}
+
+/** .ob-resend：居中的小号链接 */
+function ObLink({ t, onPress, testID, style }: { t: string; onPress: () => void; testID?: string; style?: object }) {
+  return (
+    <Pressable testID={testID} onPress={onPress} style={[{ alignSelf: 'center', marginTop: 14 }, style]}>
+      <Txt f="b9" size={12.5} style={{ textDecorationLine: 'underline', opacity: 0.8 }}>{t}</Txt>
+    </Pressable>
+  );
+}
+
 /** .ob-err：字段下方红字 */
 function ErrLine({ msg }: { msg?: string }) {
   const { night } = useApp();
@@ -221,10 +253,10 @@ export function AuthPage({ onBack, onVerify, onForgot, initialMode = 'up', prefi
       <SegBig testID="ob-mode" opts={[{ k: 'in', t: '登录' }, { k: 'up', t: '注册' }]} value={mode} onChange={m => { setMode(m); setErr({}); setBanner(null); }} />
       <FullCard>
         <Fl>邮箱</Fl>
-        <Inp testID="ob-email" value={email} onChangeText={setEmail} placeholder="name@example.com" keyboardType="email-address" autoCapitalize="none" autoCorrect={false} autoComplete="email" textContentType="emailAddress" onSubmitEditing={submit} />
+        <Inp h={38} testID="ob-email" value={email} onChangeText={setEmail} placeholder="name@example.com" keyboardType="email-address" autoCapitalize="none" autoCorrect={false} autoComplete="email" textContentType="emailAddress" onSubmitEditing={submit} />
         <ErrLine msg={err.email} />
         <Fl style={{ marginTop: 14 }}>{up ? '设置密码' : '密码'}</Fl>
-        <Inp testID="ob-pw" value={pw} onChangeText={setPw} placeholder="至少 6 位" secureTextEntry autoCapitalize="none" autoComplete={up ? 'new-password' : 'password'} textContentType={up ? 'newPassword' : 'password'} onSubmitEditing={submit} />
+        <Inp h={38} testID="ob-pw" value={pw} onChangeText={setPw} placeholder="至少 6 位" secureTextEntry autoCapitalize="none" autoComplete={up ? 'new-password' : 'password'} textContentType={up ? 'newPassword' : 'password'} onSubmitEditing={submit} />
         <ErrLine msg={err.pw?.trim() ? err.pw : undefined} />
         {up ? (
           <>
@@ -265,38 +297,30 @@ export function VerifyPage({ email, onGoLogin, onBack }: { email: string; onGoLo
     } catch (e) { showToast((e as Error).message); }
   };
   return (
-    <FullPage bg={p.green} title="验证邮件已发送" onClose={onBack} closeIcon="chev" closeLabel="返回" testID="ob-verify">
-      <Banner tone="ok" t={`验证邮件已发到 ${email}`} testID="ob-verify-mail" />
+    <FullPage bg={p.green} title="验证邮箱" onClose={onBack} closeIcon="chev" closeLabel="返回" testID="ob-verify">
       <View style={s.hs}><Tuan mood="happy" acc={['book']} size={150} /></View>
+      <View style={{ alignItems: 'center', marginBottom: 12 }}>
+        <Txt f="b9" size={14} style={{ textAlign: 'center' }}>验证邮件已发到</Txt>
+        <ObMail mail={email} />
+      </View>
       <FullCard>
-        {['打开邮箱，找到「团子育儿本」发来的邮件', '点开邮件里的验证链接', '回到这里点「我已验证，去登录」'].map((t, i) => (
-          <View key={i} style={{ flexDirection: 'row', gap: 8, marginTop: i ? 8 : 0 }}>
-            <Txt f="b9" size={13}>{i + 1}.</Txt>
-            <Txt f="b7" size={12.5} style={{ flex: 1, lineHeight: 19 }}>{t}</Txt>
-          </View>
-        ))}
+        <ObStep n={1} t="打开邮箱，找到「团子育儿本」发来的邮件" first />
+        <ObStep n={2} t="点邮件里的「验证邮箱」链接" />
+        <ObStep n={3} t="回到这里，用邮箱和密码登录" />
+        <NoteS>没找到？看看垃圾邮件箱，或者等 1 分钟再重新发送</NoteS>
       </FullCard>
       <GoBtn testID="ob-verified" label="我已验证，去登录" icon="check" onPress={onGoLogin} />
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 14 }}>
-        <Pressable testID="ob-resend" onPress={resend} disabled={cd > 0}>
-          <Txt f="b9" size={12.5} color={cd > 0 ? p.sub : p.ink} style={{ textDecorationLine: 'underline' }}>
-            {cd > 0 ? `${cd} 秒后可重新发送` : '没收到？重新发送'}
-          </Txt>
-        </Pressable>
-        <Pressable testID="ob-email-back" onPress={onBack}>
-          <Txt f="b9" size={12.5} color={p.sub} style={{ textDecorationLine: 'underline' }}>邮箱填错了</Txt>
-        </Pressable>
-      </View>
-      <NoteS>没收到可以看看垃圾邮件；免费邮件服务每小时有发送上限，太频繁会发不出去。</NoteS>
+      <ObLink testID="ob-resend" t={cd > 0 ? `${cd} 秒后可以重新发送` : '没收到？重新发送'} onPress={resend} />
+      <ObLink testID="ob-email-back" t="邮箱填错了，换一个" onPress={onBack} style={{ marginTop: 6 }} />
     </FullPage>
   );
 }
 
 /* ---------- 2d 找回密码 / 2e 已发送 ---------- */
 
-export function ForgotPage({ onBack, initialEmail = '' }: { onBack: () => void; initialEmail?: string }) {
+export function ForgotPage({ onBack }: { onBack: () => void }) {
   const { p } = useApp();
-  const [email, setEmail] = useState(initialEmail);
+  const [email, setEmail] = useState('');
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
@@ -309,16 +333,14 @@ export function ForgotPage({ onBack, initialEmail = '' }: { onBack: () => void; 
   };
   if (sent) {
     return (
-      <FullPage bg={p.green} title="重置邮件已发送" onClose={onBack} closeIcon="chev" closeLabel="返回" testID="ob-forgot-sent">
-        <Banner tone="ok" t={`重置邮件已发送 · 发到 ${email.trim()}`} sub="1 小时内有效。没收到可以看看垃圾邮件。" testID="ob-sent-mail" />
+      <FullPage bg={p.blue} title="找回密码" onClose={onBack} closeIcon="chev" closeLabel="返回" testID="ob-forgot-sent">
+        <Banner tone="ok" t="重置邮件已发送" sub={`发到 ${email.trim()}，点邮件里的链接设置新密码，1 小时内有效`} testID="ob-sent-mail" />
         <View style={s.hs}><Tuan mood="happy" acc={['book']} size={150} /></View>
+        <Txt f="b9" size={14} style={{ textAlign: 'center', marginBottom: 12 }}>去邮箱看看吧～</Txt>
         <FullCard>
-          {['打开邮箱，找到「团子育儿本」的邮件', '点开邮件里的重置链接', '设置一个新密码，然后用新密码登录'].map((t, i) => (
-            <View key={i} style={{ flexDirection: 'row', gap: 8, marginTop: i ? 8 : 0 }}>
-              <Txt f="b9" size={13}>{i + 1}.</Txt>
-              <Txt f="b7" size={12.5} style={{ flex: 1, lineHeight: 19 }}>{t}</Txt>
-            </View>
-          ))}
+          <ObStep n={1} t="打开邮件，点「重置密码」" first />
+          <ObStep n={2} t="App 会自动打开「设置新密码」" />
+          <ObStep n={3} t="设好后用新密码登录" />
         </FullCard>
         <GoBtn testID="ob-back-login" label="回到登录" icon="user" onPress={onBack} />
       </FullPage>
@@ -327,13 +349,14 @@ export function ForgotPage({ onBack, initialEmail = '' }: { onBack: () => void; 
   return (
     <FullPage bg={p.blue} title="找回密码" onClose={onBack} closeIcon="chev" closeLabel="返回" testID="ob-forgot">
       <View style={s.hs}><Tuan mood="worry" acc={['cap']} size={150} /></View>
+      <Txt f="b9" size={14} style={{ textAlign: 'center', marginBottom: 12 }}>别着急，用注册邮箱重置一下</Txt>
       <FullCard>
         <Fl>注册时用的邮箱</Fl>
-        <Inp testID="ob-forgot-email" value={email} onChangeText={setEmail} placeholder="name@example.com" keyboardType="email-address" autoCapitalize="none" autoCorrect={false} onSubmitEditing={send} />
+        <Inp h={38} testID="ob-forgot-email" value={email} onChangeText={setEmail} placeholder="name@example.com" keyboardType="email-address" autoCapitalize="none" autoCorrect={false} onSubmitEditing={send} />
         <ErrLine msg={err} />
+        <NoteS>我们会发一封重置邮件，点里面的链接就能设置新密码</NoteS>
       </FullCard>
-      <GoBtn testID="ob-forgot-send" label={busy ? '发送中…' : '发送重置邮件'} icon="send" disabled={busy} onPress={send} />
-      <NoteS>为了不暴露哪些邮箱注册过，无论这个邮箱有没有账号，都会显示「已发送」。</NoteS>
+      <GoBtn testID="ob-forgot-send" label={busy ? '请稍候…' : '发送重置邮件'} icon="send" disabled={busy} onPress={send} />
     </FullPage>
   );
 }
@@ -359,9 +382,9 @@ export function SetPwPage({ from, onDone }: { from: 'recovery' | 'me'; onDone: (
       <View style={s.hs}><Tuan mood="idle" acc={['cap']} size={150} /></View>
       <FullCard>
         <Fl>新密码</Fl>
-        <Inp testID="ob-pw-new" value={pw} onChangeText={setPw} placeholder="至少 6 位" secureTextEntry autoCapitalize="none" />
+        <Inp h={38} testID="ob-pw-new" value={pw} onChangeText={setPw} placeholder="至少 6 位" secureTextEntry autoCapitalize="none" />
         <Fl style={{ marginTop: 14 }}>再输一次</Fl>
-        <Inp testID="ob-pw-new2" value={pw2} onChangeText={setPw2} placeholder="两次要一样" secureTextEntry autoCapitalize="none" onSubmitEditing={save} />
+        <Inp h={38} testID="ob-pw-new2" value={pw2} onChangeText={setPw2} placeholder="两次要一样" secureTextEntry autoCapitalize="none" onSubmitEditing={save} />
         <ErrLine msg={err} />
       </FullCard>
       <GoBtn testID="ob-pw-save" label={busy ? '保存中…' : '保存新密码'} icon="check" disabled={busy} onPress={save} />
@@ -404,7 +427,7 @@ export function OnboardingFlow() {
     return <VerifyPage email={email} onBack={() => goAuth('up', email)} onGoLogin={() => { setBanner('验证好了就登录吧'); goAuth('in', email); }} />;
   }
   if (scr === 'forgot') {
-    return <ForgotPage initialEmail={email} onBack={() => goAuth('in', email)} />;
+    return <ForgotPage onBack={() => goAuth('in', email)} />;
   }
   return <SetPwPage from="recovery" onDone={() => goAuth('in', email)} />;
 }
@@ -431,6 +454,8 @@ const s = StyleSheet.create({
   segbig: { flexDirection: 'row', borderWidth: 2.5, borderRadius: 99, padding: 4, marginBottom: 14, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 1, shadowRadius: 0, elevation: 3 },
   segbigBtn: { flex: 1, height: 38, borderRadius: 99, alignItems: 'center', justifyContent: 'center' },
   hs: { width: 150, height: 150, alignSelf: 'center', marginBottom: -6 },
+  step: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 9 },
+  stepB: { width: 26, height: 26, borderRadius: 9, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   agreeRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 12 },
   avs: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   av: { width: '31%', alignItems: 'center', gap: 2, paddingVertical: 8, borderRadius: 18, borderWidth: 2 },

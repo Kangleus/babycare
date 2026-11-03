@@ -191,11 +191,12 @@ export function Free({ t, bg, dashed }: { t: string; bg?: string; dashed?: boole
   return <View style={[s.free, { backgroundColor: bg ?? p.green, borderColor: p.ink }, dashed && { borderStyle: 'dashed' }]}><Txt f="b9" size={10.5}>{t}</Txt></View>;
 }
 /* .inp（410-412）：输入框沿用「问团子」输入条的样式 */
-export function Inp(props: TextInputProps & { testID?: string }) {
+export function Inp(props: TextInputProps & { testID?: string; h?: number }) {
   const { p } = useApp();
+  const { h, ...rest } = props;
   return (
     <View style={[s.inp, { backgroundColor: p.card, borderColor: p.ink }]}>
-      <TextInput placeholderTextColor={p.sub} {...props} style={[{ flex: 1, minWidth: 0, fontSize: 14, color: p.ink, paddingVertical: 8, outlineStyle: 'none' } as object, fam('b7'), props.style]} />
+      <TextInput placeholderTextColor={p.sub} {...rest} style={[{ flex: 1, minWidth: 0, fontSize: 14, color: p.ink, paddingVertical: h ? 0 : 8, height: h, outlineStyle: 'none' } as object, fam('b7'), props.style]} />
     </View>
   );
 }
