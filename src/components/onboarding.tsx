@@ -11,8 +11,8 @@ import { supabase } from '@/data/supabase';
 import { hard } from '@/theme/tokens';
 import { Icon, Tuan } from '@/lib/svg';
 import type { IconName } from '@/lib/art';
-import { CBox, Fl, FullCard, FullPage, GoBtn, Inp, NoteS } from './ui';
-import { InkReset, Txt } from './txt';
+import { Actions, Blobs, Btn, CBox, Fl, FullCard, FullPage, GoBtn, Heard, Inp, NoteS, Sheet } from './ui';
+import { InkCtx, InkReset, Txt } from './txt';
 
 /* ⚠️ 草案占位文本：上线前需由法务定稿替换 */
 export const POLICY_DRAFT = [
@@ -27,6 +27,20 @@ export const POLICY_DRAFT = [
 export const POLICY_VERSION = 'draft-2026-11-02';
 
 /* ---------- 通用小组件 ---------- */
+
+/** 隐私政策 / 用户协议（原型 policy()）：.heard + .ob-pol + 我知道了 */
+export function PolicySheet({ kind, onClose, sub }: { kind: 'privacy' | 'terms' | null; onClose: () => void; sub?: string }) {
+  const { p } = useApp();
+  return (
+    <Sheet open={!!kind} onClose={onClose} testID="policy-sheet">
+      <Heard mood="idle" acc={['book']} t={kind === 'terms' ? '用户协议' : '隐私政策'} sub={sub ?? '草案 · 待法务审核'} />
+      <View style={[s.pol, { backgroundColor: p.bg2, borderColor: p.line }]}>
+        {POLICY_DRAFT.map((t, i) => <Txt key={i} f={i ? 'b7' : 'b9'} size={12} color={i ? p.ink : '#C9452F'} style={{ lineHeight: 19.2, marginBottom: 6 }}>{t}</Txt>)}
+      </View>
+      <Actions><Btn label="我知道了" kind="pri" onPress={onClose} testID="policy-ok" /></Actions>
+    </Sheet>
+  );
+}
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
@@ -52,7 +66,7 @@ export function Banner({ tone, icon, t, sub, testID }: { tone?: 'ok' | 'err'; ic
 function SegBig<T extends string>({ opts, value, onChange, testID }: { opts: { k: T; t: string }[]; value: T; onChange: (k: T) => void; testID?: string }) {
   const { p } = useApp();
   return (
-    <View style={[s.segbig, { backgroundColor: p.card, borderColor: p.ink, shadowColor: p.shadow }]}>
+    <InkReset value={null}><View style={[s.segbig, { backgroundColor: p.card, borderColor: p.ink, shadowColor: p.shadow }]}>
       {opts.map(o => {
         const on = o.k === value;
         return (
@@ -62,7 +76,7 @@ function SegBig<T extends string>({ opts, value, onChange, testID }: { opts: { k
           </Pressable>
         );
       })}
-    </View>
+    </View></InkReset>
   );
 }
 
@@ -72,7 +86,7 @@ function ObStep({ n, t, first, testID }: { n: number; t: string; first?: boolean
   return (
     <View testID={testID} style={[s.step, first ? null : { borderTopWidth: 2, borderStyle: 'dashed', borderTopColor: p.line }]}>
       <View style={[s.stepB, { backgroundColor: p.yellow, borderColor: p.ink }]}><Txt f="b9" size={12.5}>{n}</Txt></View>
-      <Txt f="b9" size={13} style={{ flex: 1, lineHeight: 19 }}>{t}</Txt>
+      <Txt f="b9" size={13} style={{ flex: 1, lineHeight: 18.85 }}>{t}</Txt>
     </View>
   );
 }
@@ -82,7 +96,8 @@ function ObMail({ mail }: { mail: string }) {
   const { p } = useApp();
   return (
     <View style={{ alignItems: 'center' }}>
-      <View style={{ backgroundColor: p.yellowS, borderRadius: 10, paddingHorizontal: 6, paddingVertical: 1 }}>
+      {/* 行内 span 的上下 padding 不撑行高：药丸 22px 高，只占 20.5px 的行 */}
+      <View style={{ backgroundColor: p.yellowS, borderRadius: 10, paddingHorizontal: 6, paddingVertical: 1, marginTop: -0.5, marginBottom: -1 }}>
         <Txt f="b9" size={15} style={{ wordBreak: 'break-all', lineHeight: 20 } as object}>{mail}</Txt>
       </View>
     </View>
@@ -93,7 +108,7 @@ function ObMail({ mail }: { mail: string }) {
 export function ObLink({ t, onPress, testID, style }: { t: string; onPress: () => void; testID?: string; style?: object }) {
   return (
     <Pressable testID={testID} onPress={onPress} style={[{ alignSelf: 'center', marginTop: 14 }, style]}>
-      <Txt f="b9" size={12.5} style={{ textDecorationLine: 'underline', opacity: 0.8 }}>{t}</Txt>
+      <Txt f="b9" size={12.5} style={{ textDecorationLine: 'underline', textUnderlineOffset: 3, opacity: 0.8, lineHeight: 17 } as object}>{t}</Txt>
     </Pressable>
   );
 }
@@ -125,38 +140,41 @@ export function Welcome({ onStart, onDemo }: { onStart: () => void; onDemo: () =
      .btn.go(60)、.ob-link、.ob-mini；CTA 那一整块用弹性留白顶到屏幕底部（原型 .ob-grow）。 */
   return (
     <View style={{ flex: 1, backgroundColor: p.yellow }} testID="ob-welcome">
+      <InkCtx.Provider value={night ? '#2a1f16' : null}>
       <ScrollView contentContainerStyle={{ flexGrow: 1, paddingTop: 62, paddingHorizontal: 20, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
+        <Blobs />
         <View style={s.obTop}>
           <Pressable testID="ob-night" accessibilityLabel="夜间模式" onPress={toggleNight}
             style={({ pressed }) => [s.iconbtn, { backgroundColor: p.card, borderColor: p.ink }, pressed ? { transform: [{ translateY: 3 }] } : hard(p, 3)]}>
             <Icon name={night ? 'sun' : 'moon'} size={22} color={p.ink} />
           </Pressable>
         </View>
-        <View style={{ width: 210, height: 210, alignSelf: 'center', marginTop: -6, marginBottom: -10 }}>
+        <View style={{ width: 210, height: 210, alignSelf: 'center', marginTop: -6, marginBottom: -10, zIndex: 2 }}>
           <Tuan mood="happy" acc={[night ? 'cap' : 'sprout']} size={210} cls="nod" />
         </View>
         <Txt f="h" size={38} style={{ textAlign: 'center', lineHeight: 40 }}>团子育儿本</Txt>
-        <Txt f="b9" size={15} style={{ textAlign: 'center', marginTop: 8, lineHeight: 23 }}>一句话记下宝宝的吃睡拉，团团帮你算</Txt>
-        <View style={s.feats}>
+        <Txt f="b9" size={15} style={{ textAlign: 'center', marginTop: 8, lineHeight: 22.5 }}>一句话记下宝宝的吃睡拉，团团帮你算</Txt>
+        <InkReset value={null}><View style={s.feats}>
           {FEATS.map(f => (
             <View key={f.t} style={[s.feat, { backgroundColor: p.card, borderColor: p.ink, shadowColor: p.shadow }]}>
               <View style={[s.featIc, { backgroundColor: p[f.bg], borderColor: p.ink }]}><Icon name={f.ic} size={22} color={p.ink} /></View>
               <View style={{ flex: 1, minWidth: 0 }}>
-                <Txt f="b9" size={13.5} style={{ lineHeight: 17 }}>{f.t}</Txt>
-                <Txt f="b8" size={10.5} color={p.sub} style={{ marginTop: 2, lineHeight: 14 }}>{f.s}</Txt>
+                <Txt f="b9" size={13.5} style={{ lineHeight: 16.2 }}>{f.t}</Txt>
+                <Txt f="b8" size={10.5} color={p.sub} style={{ marginTop: 2, lineHeight: 14.175 }}>{f.s}</Txt>
               </View>
             </View>
           ))}
-        </View>
+        </View></InkReset>
         <View style={{ flex: 1, minHeight: 12 }} />
         <GoBtn testID="ob-start" label="开始使用" icon="sparkle" onPress={onStart} />
         <Pressable testID="ob-demo" onPress={onDemo} style={{ marginTop: 16, alignSelf: 'center' }}>
-          <Txt f="b9" size={14} style={{ textDecorationLine: 'underline' }}>先看看示例</Txt>
+          <Txt f="b9" size={14} style={{ textDecorationLine: 'underline', textUnderlineOffset: 4, textDecorationThickness: 2 } as object}>先看看示例</Txt>
         </Pressable>
-        <Txt f="b8" size={11.5} color={p.ink} style={{ textAlign: 'center', marginTop: 10, lineHeight: 18, opacity: 0.72 }}>
+        <Txt f="b8" size={11.5} style={{ textAlign: 'center', marginTop: 10, lineHeight: 18, opacity: 0.72 }}>
           示例是虚构的宝宝「豆米」，只能看，不会保存任何数据
         </Txt>
       </ScrollView>
+      </InkCtx.Provider>
     </View>
   );
 }
@@ -177,6 +195,7 @@ export function AuthPage({ onBack, onVerify, onForgot, initialMode = 'up', prefi
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<{ email?: string; pw?: string }>({});
   const [banner, setBanner] = useState<Notice | null>(null);
+  const [pol, setPol] = useState<'privacy' | 'terms' | null>(null);
 
   const submit = async () => {
     if (busy) return;
@@ -232,7 +251,7 @@ export function AuthPage({ onBack, onVerify, onForgot, initialMode = 'up', prefi
           <>
             <Pressable testID="ob-agree-row" onPress={() => setAgree(!agree)} style={s.agreeRow}>
               <CBox testID="ob-agree" on={agree} onPress={() => setAgree(!agree)} />
-              <Txt f="b8" size={12.5} style={{ flex: 1, lineHeight: 18 }}>我已阅读并同意《隐私政策》和《用户协议》</Txt>
+              <Txt f="b8" size={12.5} style={{ flex: 1, lineHeight: 18.75 }}>我已阅读并同意 <Txt f="b9" size={12.5} color="#C8546B" testID="ob-pol-privacy" onPress={() => setPol('privacy')}>《隐私政策》</Txt><Txt f="b9" size={12.5} color="#C8546B" testID="ob-pol-terms" onPress={() => setPol('terms')}>《用户协议》</Txt></Txt>
             </Pressable>
             <NoteS>注册后会收到一封验证邮件，点开链接就能登录</NoteS>
           </>
@@ -240,12 +259,13 @@ export function AuthPage({ onBack, onVerify, onForgot, initialMode = 'up', prefi
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 }}>
             <Txt f="b8" size={11.5} color={p.sub}>登录后记录自动同步给家人</Txt>
             <Pressable testID="ob-forgot" onPress={() => onForgot(email.trim())}>
-              <Txt f="b9" size={12.5} color={p.sub} style={{ textDecorationLine: 'underline' }}>忘记密码？</Txt>
+              <Txt f="b9" size={12.5} color={p.sub} style={{ textDecorationLine: 'underline', textUnderlineOffset: 3 } as object}>忘记密码？</Txt>
             </Pressable>
           </View>
         )}
       </FullCard>
       <GoBtn testID="ob-submit" label={busy ? '请稍候…' : up ? '注册' : '登录'} icon={up ? 'sparkle' : 'user'} disabled={busy} off={up && !agree} onPress={submit} />
+      <PolicySheet kind={pol} onClose={() => setPol(null)} />
     </FullPage>
   );
 }
@@ -270,7 +290,7 @@ export function VerifyPage({ email, onGoLogin, onBack }: { email: string; onGoLo
     <FullPage bg={p.green} title="验证邮箱" onClose={onBack} ob testID="ob-verify">
       <View style={s.hs}><Tuan mood="happy" acc={['book']} size={150} /></View>
       <View style={{ alignItems: 'center', marginBottom: 12 }}>
-        <Txt f="b9" size={14} style={{ textAlign: 'center', lineHeight: 20 }}>验证邮件已发到</Txt>
+        <Txt f="b9" size={14} style={{ textAlign: 'center', lineHeight: 20.5 }}>验证邮件已发到</Txt>
         <ObMail mail={email} />
       </View>
       <FullCard>
@@ -288,7 +308,7 @@ export function VerifyPage({ email, onGoLogin, onBack }: { email: string; onGoLo
 
 /* ---------- 2d 找回密码 / 2e 已发送 ---------- */
 
-export function ForgotPage({ onBack, initialEmail = '' }: { onBack: () => void; initialEmail?: string }) {
+export function ForgotPage({ onBack, initialEmail = '' }: { onBack: (email: string) => void; initialEmail?: string }) {
   const { p } = useApp();
   const [email, setEmail] = useState(initialEmail);
   const [err, setErr] = useState('');
@@ -303,7 +323,7 @@ export function ForgotPage({ onBack, initialEmail = '' }: { onBack: () => void; 
   };
   if (sent) {
     return (
-      <FullPage bg={p.blue} title="找回密码" onClose={onBack} ob testID="ob-forgot-sent">
+      <FullPage bg={p.blue} title="找回密码" onClose={() => onBack(email.trim())} ob testID="ob-forgot-sent">
         <Banner tone="ok" icon="check" t="重置邮件已发送" sub={<>发到 <Txt f="b9" size={11.5} color={p.sub}>{email.trim()}</Txt>，点邮件里的链接设置新密码，1 小时内有效</>} testID="ob-sent-mail" />
         <View style={s.hs}><Tuan mood="happy" acc={['book']} size={150} /></View>
         <Txt f="b9" size={14} style={{ textAlign: 'center', marginBottom: 12 }}>去邮箱看看吧～</Txt>
@@ -312,12 +332,12 @@ export function ForgotPage({ onBack, initialEmail = '' }: { onBack: () => void; 
           <ObStep n={2} t="App 会自动打开「设置新密码」" testID="ob-step-2" />
           <ObStep n={3} t="设好后用新密码登录" testID="ob-step-3" />
         </FullCard>
-        <GoBtn testID="ob-back-login" label="回到登录" icon="user" onPress={onBack} />
+        <GoBtn testID="ob-back-login" label="回到登录" icon="user" onPress={() => onBack(email.trim())} />
       </FullPage>
     );
   }
   return (
-    <FullPage bg={p.blue} title="找回密码" onClose={onBack} ob testID="ob-forgot">
+    <FullPage bg={p.blue} title="找回密码" onClose={() => onBack(email.trim())} ob testID="ob-forgot">
       <View style={s.hs}><Tuan mood="worry" acc={['cap']} size={150} /></View>
       <Txt f="b9" size={14} style={{ textAlign: 'center', marginBottom: 12 }}>别着急，用注册邮箱重置一下</Txt>
       <FullCard>
@@ -412,7 +432,7 @@ export function OnboardingFlow() {
   if (scr === 'verify') {
     return <VerifyPage email={email} onBack={() => goAuth('up', email)} onGoLogin={() => goAuth('in', email, { tone: 'ok', icon: 'check', t: '验证好了就登录吧', sub: '用刚才注册的邮箱和密码' })} />;
   }
-  return <ForgotPage initialEmail={email} onBack={() => goAuth('in', email)} />;
+  return <ForgotPage initialEmail={email} onBack={m => goAuth('in', m || email)} />;
 }
 
 const s = StyleSheet.create({
@@ -425,11 +445,12 @@ const s = StyleSheet.create({
   bannerT: { flexDirection: 'row', gap: 6, alignItems: 'center' },
   segbig: { flexDirection: 'row', borderWidth: 2.5, borderRadius: 99, padding: 4, marginBottom: 14, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 1, shadowRadius: 0, elevation: 3 },
   segbigBtn: { flex: 1, height: 38, borderRadius: 99, alignItems: 'center', justifyContent: 'center' },
-  hs: { width: 150, height: 150, alignSelf: 'center', marginBottom: -6 },
+  hs: { width: 150, height: 150, alignSelf: 'center', marginBottom: -6, zIndex: 2 },
   line: { textAlign: 'center', marginBottom: 12 },
   step: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 9 },
   stepB: { width: 26, height: 26, borderRadius: 9, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
-  agreeRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 12 },
+  pol: { marginTop: 12, borderWidth: 2, borderStyle: 'dashed', borderRadius: 16, padding: 12, paddingBottom: 6 },
+  agreeRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 14 },
   avs: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   av: { width: '31%', alignItems: 'center', gap: 2, paddingVertical: 8, borderRadius: 18, borderWidth: 2 },
   avIn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },

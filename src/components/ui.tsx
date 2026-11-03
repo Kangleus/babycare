@@ -240,6 +240,14 @@ const s = StyleSheet.create({
 });
 
 /* .full 整页（293-306, 309）：彩色底 + 白色气泡圆 + 顶栏 + 团团 + 卡片 + 大按钮 */
+export function Blobs() {
+  return (
+    <>
+      <View pointerEvents="none" style={[fs.blob, { width: 260, height: 260, right: -90, top: 60 }]} />
+      <View pointerEvents="none" style={[fs.blob, { width: 160, height: 160, left: -60, top: 300 }]} />
+    </>
+  );
+}
 export function FullPage({ bg, title, onClose, children, testID, closeIcon = 'x', closeLabel = '关闭', ob, grow }: { bg: string; title: string; onClose?: () => void; children: ReactNode; testID?: string; closeIcon?: IconName; closeLabel?: string; ob?: boolean; grow?: boolean }) {
   const { p, night } = useApp();
   /* ob = 首次使用流程的页面（原型 .full.ob）：返回键用 ic.back(20)；夜间时直接放在彩色底上的字用 #2a1f16 */
@@ -248,8 +256,7 @@ export function FullPage({ bg, title, onClose, children, testID, closeIcon = 'x'
     <View testID={testID} style={[fs.full, { backgroundColor: bg }]}>
       <InkCtx.Provider value={ob && night ? '#2a1f16' : null}>
         <ScrollView contentContainerStyle={[fs.pad, grow && { flexGrow: 1 }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-          <View pointerEvents="none" style={[fs.blob, { width: 260, height: 260, right: -90, top: 60 }]} />
-          <View pointerEvents="none" style={[fs.blob, { width: 160, height: 160, left: -60, top: 300 }]} />
+          <Blobs />
           {title || onClose ? <View style={fs.bar}>
             {onClose ? <Pressable testID="full-close" accessibilityLabel={ob ? '返回' : closeLabel} onPress={onClose} style={({ pressed }) => [fs.iconbtn, { backgroundColor: p.card, borderColor: p.ink }, pressed ? { transform: [{ translateY: 3 }] } : hard(p, 3)]}><Icon name={icon} size={ob ? 20 : 18} color={p.ink} style={!ob && closeIcon === 'chev' ? { transform: [{ rotate: '180deg' }] } : undefined} /></Pressable> : <View style={{ width: 42 }} />}
             <Txt f="h" size={22}>{title}</Txt>
@@ -295,11 +302,13 @@ export function CBox({ on, onPress, testID }: { on: boolean; onPress: () => void
 const fs = StyleSheet.create({
   full: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 105 },
   pad: { paddingTop: 62, paddingHorizontal: 20, paddingBottom: 40 },
-  blob: { position: 'absolute', borderRadius: 999, backgroundColor: 'rgba(255,255,255,.28)' },
+  /* 原型 .blob-bg 是 absolute、排在内容前面：会盖在没定位的元素（卡片 / 文字 / 返回键）上面，
+     而 .btn / .ob-hs / .hero / .ob-code 这些 position:relative 的元素在它上面 → zIndex 1 / 2 复刻这个叠放顺序 */
+  blob: { position: 'absolute', borderRadius: 999, backgroundColor: 'rgba(255,255,255,.28)', zIndex: 1 },
   bar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   iconbtn: { width: 42, height: 42, borderRadius: 15, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center' },
-  hero: { width: 200, height: 200, marginTop: 4, marginBottom: -6, alignSelf: 'center' },
+  hero: { width: 200, height: 200, marginTop: 4, marginBottom: -6, alignSelf: 'center', zIndex: 2 },
   card: { borderWidth: 3, borderRadius: 28, padding: 16 },
-  go: { marginTop: 18, width: '100%', height: 60, borderRadius: 99, borderWidth: 3, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7 },
+  go: { zIndex: 2, marginTop: 18, width: '100%', height: 60, borderRadius: 99, borderWidth: 3, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7 },
   cbox: { width: 30, height: 30, borderRadius: 11, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center' },
 });

@@ -47,7 +47,7 @@ export function Toast() {
   const { p, toast } = useApp();
   if (!toast) return null;
   return (
-    <View pointerEvents="none" style={s.toastWrap}>
+    <View pointerEvents="none" style={s.toastWrap} testID="toast">
       <View style={[s.toast, { backgroundColor: p.ink }]}><Txt f="b8" size={13} color={p.bg}>{toast}</Txt></View>
     </View>
   );

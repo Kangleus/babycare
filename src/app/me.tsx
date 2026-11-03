@@ -8,9 +8,9 @@ import Svg, { Defs, Pattern, Rect } from 'react-native-svg';
 import { Page, PTitle } from '@/components/page';
 import { BabyAvatar } from '@/components/home';
 import { ConfirmSheet, ConfirmOpts } from '@/components/confirm';
-import { POLICY_DRAFT, SetPwPage } from '@/components/onboarding';
+import { PolicySheet, SetPwPage } from '@/components/onboarding';
 import { BabyForm, FEEDS } from '@/components/ob-family';
-import { Actions, Btn, Free, FullHero, FullPage, Heard, HGroup, Li, List, Sheet, Toggle } from '@/components/ui';
+import { Free, FullHero, FullPage, HGroup, Li, List, Toggle } from '@/components/ui';
 import { cloud, useCloud } from '@/state/cloud';
 import { Txt } from '@/components/txt';
 import { Icon, Tuan } from '@/lib/svg';
@@ -183,13 +183,7 @@ export default function Me() {
         <SetPwPage from="me" onDone={() => setSub(null)} />
       </Modal>
 
-      <Sheet open={sub === 'policy'} onClose={() => setSub(null)} testID="policy-sheet">
-        <Heard mood="idle" acc={['book']} t="隐私政策与用户协议" sub={app.settings.consentAt ? `已于 ${app.settings.consentAt.slice(0, 10)} 同意` : '草案 · 待法务审核'} />
-        <View style={[s.pol, { backgroundColor: p.bg2, borderColor: p.line }]}>
-          {POLICY_DRAFT.map((t, i) => <Txt key={i} f={i ? 'b7' : 'b9'} size={12} color={i ? p.ink : '#C9452F'} style={{ lineHeight: 19.2, marginBottom: 6 }}>{t}</Txt>)}
-        </View>
-        <Actions><Btn label="我知道了" kind="pri" onPress={() => setSub(null)} /></Actions>
-      </Sheet>
+      <PolicySheet kind={sub === 'policy' ? 'privacy' : null} onClose={() => setSub(null)} sub={app.settings.consentAt ? `草案 · 待法务审核 · 已于 ${app.settings.consentAt.slice(0, 10)} 同意` : undefined} />
 
       <ConfirmSheet c={confirm} onClose={() => setConfirm(null)} />
     </>
@@ -205,6 +199,5 @@ const s = StyleSheet.create({
   grow: { flexDirection: 'row', gap: 12, alignItems: 'center', borderWidth: 2.5, borderRadius: 26, paddingVertical: 12, paddingHorizontal: 14, marginTop: 14 },
   pbar: { height: 16, borderRadius: 99, borderWidth: 3, overflow: 'hidden', marginTop: 7, marginBottom: 4 },
   pfill: { position: 'absolute', left: 0, top: 0, bottom: 0, borderRightWidth: 3, borderRadius: 99, overflow: 'hidden' },
-  pol: { marginTop: 12, borderWidth: 2, borderStyle: 'dashed', borderRadius: 16, padding: 12, paddingBottom: 6 },
   foot: { textAlign: 'center', marginTop: 18, lineHeight: 17.6 },
 });

@@ -10,6 +10,7 @@ import { Icon, Tuan } from '@/lib/svg';
 import type { IconName } from '@/lib/art';
 import { hard } from '@/theme/tokens';
 import { IS_WEB } from './chrome';
+import { useReduceMotion } from '@/lib/mascot';
 import { InviteBody } from './cloud-ui';
 import { HCard } from './health/hui';
 import { Actions, Btn, Heard, Sheet } from './ui';
@@ -41,7 +42,9 @@ export function FreshPred() {
     <View testID="pred-fresh" style={[s.pred, { backgroundColor: p.yellow, borderColor: p.ink }, hard(p, 5)]}>
       <View style={s.predCircle} />
       <View style={[s.lab, chipBg]}><Icon name="clock" size={14} color={c} /><Txt f="b8" size={11.5} color={c}>下一顿预测</Txt></View>
-      <Txt f="h" size={27} color={c} style={s.big}>记满 <Text style={numStyle(34)}>3</Text> 天{'\n'}团团就会算</Txt>
+      {/* 原型 .pred .big 行高 1.15：第一行有 34px 的数字撑高（≈39px），第二行只有 27px 字（≈31px） */}
+      <Txt f="h" size={27} color={c} style={s.big}>记满 <Text style={numStyle(34)}>3</Text> 天</Txt>
+      <Txt f="h" size={27} color={c} style={s.big2}>团团就会算</Txt>
       <Txt f="b8" size={13} color={c} style={{ opacity: 0.85 }}>{events.length || days ? '今天开了个好头，明天接着记' : '先记几次喂奶和睡觉吧'}</Txt>
       <View style={s.dots} testID="pred-fresh-dots">
         {[0, 1, 2].map(i => <View key={i} style={[s.dot, { borderColor: p.ink, backgroundColor: i < days ? p.green : night ? 'rgba(0,0,0,.18)' : 'rgba(255,255,255,.7)' }]} />)}
@@ -92,16 +95,17 @@ export function CoachMark() {
   const { p, night, saveFlags } = useApp();
   const { guide } = useFresh();
   const path = usePathname();
+  const still = useReduceMotion();
   const [fl] = useState(() => new Animated.Value(0));
   useEffect(() => {
-    if (!guide) return;
+    if (!guide || still) return;
     const a = Animated.loop(Animated.sequence([
       Animated.timing(fl, { toValue: 1, duration: 1200, easing: Easing.inOut(Easing.ease), useNativeDriver: !IS_WEB }),
       Animated.timing(fl, { toValue: 0, duration: 1200, easing: Easing.inOut(Easing.ease), useNativeDriver: !IS_WEB }),
     ]));
     const t = setTimeout(() => a.start(), 600);
     return () => { clearTimeout(t); a.stop(); };
-  }, [guide, fl]);
+  }, [guide, fl, still]);
   if (!guide || path !== '/') return null;
   const ty = fl.interpolate({ inputRange: [0, 1], outputRange: [0, -5] });
   const hi = night ? p.pink : '#E5738A';
@@ -123,14 +127,17 @@ export function MicRipple() {
   const { p } = useApp();
   const { guide } = useFresh();
   const path = usePathname();
+  const still = useReduceMotion();
+  /* 「减少动态效果」时停在原型动画的起始帧之外的静止态：一圈完整的粉色描边 */
   const [v] = useState(() => new Animated.Value(0));
   const on = guide && path === '/';
   useEffect(() => {
-    if (!on) return;
+    if (!on || still) return;
     const a = Animated.loop(Animated.timing(v, { toValue: 1, duration: 1800, easing: Easing.out(Easing.ease), useNativeDriver: !IS_WEB }));
     a.start(); return () => a.stop();
-  }, [on, v]);
+  }, [on, v, still]);
   if (!on) return null;
+  if (still) return <View pointerEvents="none" testID="mic-ripple" style={[s.ripple, { borderColor: p.pink }]} />;
   return <Animated.View pointerEvents="none" testID="mic-ripple" style={[s.ripple, { borderColor: p.pink, opacity: v.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }), transform: [{ scale: v.interpolate({ inputRange: [0, 1], outputRange: [0.55, 1.35] }) }] }]} />;
 }
 
@@ -182,10 +189,11 @@ const s = StyleSheet.create({
   pred: { position: 'relative', marginTop: 10, borderWidth: 3, borderRadius: 28, paddingTop: 12, paddingRight: 14, paddingBottom: 11, paddingLeft: 16, overflow: 'hidden' },
   predCircle: { position: 'absolute', right: -30, top: -40, width: 170, height: 170, borderRadius: 85, backgroundColor: 'rgba(255,255,255,.35)' },
   lab: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'rgba(255,255,255,.65)', borderRadius: 99, paddingVertical: 3, paddingHorizontal: 9 },
-  big: { marginTop: 7.5, marginBottom: 1, lineHeight: 39.1 },
+  big: { marginTop: 8, lineHeight: 39.1 },
+  big2: { marginBottom: 1, lineHeight: 31.05 },
   dots: { flexDirection: 'row', gap: 6, alignItems: 'center', marginTop: 9 },
   dot: { width: 26, height: 10, borderRadius: 9, borderWidth: 2 },
-  basis: { marginTop: 6, opacity: 0.75, maxWidth: '60%' },
+  basis: { marginTop: 6, opacity: 0.75, maxWidth: '60%', lineHeight: 16 },
   mascot: { position: 'absolute', right: 2, bottom: -4, width: 122, height: 122 },
   nudge: { flexDirection: 'row', gap: 12, alignItems: 'center', borderWidth: 2.5, borderRadius: 26, paddingVertical: 12, paddingHorizontal: 14, marginTop: 16 },
   nIc: { width: 46, height: 46, borderRadius: 16, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center' },

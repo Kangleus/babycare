@@ -131,7 +131,7 @@ export function JoinPage({ onBack, onJoined }: { onBack: () => void; onJoined: (
       <FullCard>
         <Fl>邀请码</Fl>
         <CodeBoxes code={code} err={!!err} onChange={c => { setCode(c); if (err) setErr(''); }} onSubmit={join} />
-        <Fl style={{ marginTop: 14 }}>你是宝宝的？</Fl>
+        <Fl style={{ marginTop: 8 }}>你是宝宝的？</Fl>{/* .ob-mt 14px 与上面 6px 折叠 */}
         <RolePicker testID="ob-join-role" role={role} other={other} onRole={setRole} onOther={setOther} />
         <NoteS>家人看到的记录会显示「{me}记」</NoteS>
       </FullCard>
@@ -281,13 +281,13 @@ export function FamilyFlow({ joined, onJoined, onEnter }: { joined: string | nul
 
 
 const s = StyleSheet.create({
-  hs: { width: 150, height: 150, alignSelf: 'center', marginBottom: -6 },
+  hs: { width: 150, height: 150, alignSelf: 'center', marginBottom: -6, zIndex: 2 },
   line: { textAlign: 'center', marginBottom: 12 },
   mini: { textAlign: 'center', lineHeight: 18.4, opacity: 0.72 },
   choice: { flexDirection: 'row', gap: 12, alignItems: 'center', borderWidth: 3, borderRadius: 28, paddingTop: 14, paddingRight: 12, paddingBottom: 14, paddingLeft: 14, marginTop: 14 },
   choiceM: { width: 78, height: 78, borderRadius: 24, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   tg2: { alignSelf: 'flex-start', marginTop: 6, borderWidth: 1.5, borderRadius: 99, paddingVertical: 1, paddingHorizontal: 8 },
-  code: { flexDirection: 'row', gap: 7, justifyContent: 'center', marginTop: 4, marginBottom: 6 },
+  code: { zIndex: 2, flexDirection: 'row', gap: 7, justifyContent: 'center', marginBottom: 6 }, // 原型 margin 4px 0 6px 与 .fl 的 8px 外边距折叠
   codeBox: { width: 44, height: 56, borderRadius: 14, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center' },
   obBaby: { flexDirection: 'row', gap: 12, alignItems: 'center', borderWidth: 2.5, borderRadius: 22, paddingVertical: 10, paddingHorizontal: 12 },
   obAv: { width: 54, height: 54, borderRadius: 19, borderWidth: 3, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
