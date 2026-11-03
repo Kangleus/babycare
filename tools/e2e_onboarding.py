@@ -34,9 +34,9 @@ def session(email=EMAIL, uid='u-new'):
     return s
 
 
-def db_rows(baby_id, fam):
+def db_rows(baby_id, fam, n=None):
     out = []
-    for i, r in enumerate(common._FIX['records'], 1):
+    for i, r in enumerate(common._FIX['records'][:n], 1):
         out.append({'id': f'e2e-j{i}', 'baby_id': baby_id, 'family_id': fam, 'type': r['type'], 'started_at': r['time'],
                     'ended_at': r.get('endTime'), 'vals': r.get('values') or {}, 'note': r.get('note'), 'created_by_name': r['createdBy'],
                     'src': r['src'], 'created_at': r['createdAt'], 'updated_at': r['updatedAt'], 'deleted_at': None})
@@ -53,6 +53,8 @@ class Backend:
         self.family = None          # None | 'new' | 'joined'
         self.baby = None
         self.me = '妈妈'
+        self.rows = None            # 加入的家庭里有几条记录（None = 全部 fixture）
+        self.email = EMAIL
         self.reqs = []              # (method, url, body, headers)
 
     def rpc_body(self, name):
@@ -77,18 +79,18 @@ class Backend:
         if '/auth/v1/signup' in url:
             if self.signup == 'exists':
                 return await J({'code': 422, 'error_code': 'user_already_exists', 'msg': 'User already registered'}, 422)
-            u = session()['user']; u['identities'] = [{'id': 'i1'}]
+            u = session(self.email)['user']; u['identities'] = [{'id': 'i1'}]
             return await J(u)
         if '/auth/v1/token' in url:
             if 'grant_type=password' in url and self.login == 'bad':
                 return await J({'code': 400, 'error_code': 'invalid_credentials', 'msg': 'Invalid login credentials'}, 400)
-            return await J(session())
+            return await J(session(self.email))
         if '/auth/v1/recover' in url or '/auth/v1/resend' in url:
             return await J({})
         if '/auth/v1/logout' in url:
             return await route.fulfill(status=204, headers=H)
         if '/auth/v1/user' in url:
-            return await J(session()['user'])
+            return await J(session(self.email)['user'])
         if '/rest/v1/family_members' in url:
             if 'user_id=eq' in url:
                 if not self.family:
@@ -126,7 +128,7 @@ class Backend:
             return await J([self.baby] if self.baby and m == 'GET' else ([] if m == 'GET' else {}))
         if '/rest/v1/records' in url:
             if m == 'GET':
-                return await J(db_rows(self.baby['id'], 'fam-x') if self.family == 'joined' and 'updated_at=gt' not in url else [])
+                return await J(db_rows(self.baby['id'], 'fam-x', self.rows) if self.family == 'joined' and 'updated_at=gt' not in url else [])
             rows = json.loads(body or '[]')
             return await J(rows if isinstance(rows, list) else [rows], 201)
         if '/rest/v1/' in url:
@@ -134,8 +136,9 @@ class Backend:
         return await J({})
 
 
-async def new_ctx(b, be, night=False, seed_session=False):
-    ctx = await b.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=2)
+async def new_ctx(b, be, night=False, seed_session=False, still=False):
+    # still=True：系统「减少动态效果」（视觉对比用，JS 驱动的动画也停下来）
+    ctx = await b.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=2, reduced_motion='reduce' if still else 'no-preference')
     await ctx.route('**/*', be.handler)
     init = {'yj:v1:settings': {'consentAt': None, 'onboarded': False, 'night': night, 'cards': common.DEF_CARDS, 'sample': 0, 'lvl': 1, 'xp': 0}}
     if seed_session:
@@ -394,4 +397,5 @@ async def main():
     print(f'\n{len(ok)} passed, {len(bad)} failed', bad)
     sys.exit(1 if bad else 0)
 
-asyncio.run(main())
+if __name__ == '__main__':
+    asyncio.run(main())

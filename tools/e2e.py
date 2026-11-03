@@ -249,7 +249,7 @@ async def main():
     await T('policy').scroll_into_view_if_needed(); await T('policy').click(); await r.wait_for_timeout(800); await shot('m2/08-policy.png'); await r.get_by_text('我知道了',exact=True).last.click(); await r.wait_for_timeout(700)
     body=await r.locator('body').inner_text()
     check('我的：没有「清空全部数据 / 重置演示数据」', '清空全部数据' not in body and '重置演示数据' not in body)
-    check('我的：账号区 邮箱 / 修改密码 / 退出登录 / 注销账号', all(await T(t).count()==1 for t in ['account','change-pw','sign-out','delete-account']))
+    check('我的：账号区 邮箱 / 修改密码 / 退出登录 / 注销账号', [await T(t).count() for t in ['account','change-pw','sign-out','delete-account']] == [1, 1, 1, 1])
     await T('night-toggle').scroll_into_view_if_needed(); await T('night-toggle').click(); await r.wait_for_timeout(900); await shot('m2/10-me-night.png')
     await home(); await r.wait_for_timeout(500); await shot('m2/11-home-night-renamed.png')
     check('home header uses new name', '小豆米' in await r.locator('body').inner_text())
