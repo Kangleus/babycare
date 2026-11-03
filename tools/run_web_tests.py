@@ -22,7 +22,7 @@ ROOT = Path(__file__).resolve().parent.parent
 TOOLS = ROOT / 'tools'
 DIST = ROOT / 'dist'
 
-DEFAULT_TESTS = ['e2e.py', 'e2e_m4.py', 'e2e_m5.py', 'e2e_ask.py', 'mascot_check.py', 'night_check.py']
+DEFAULT_TESTS = ['e2e.py', 'e2e_m4.py', 'e2e_m5.py', 'e2e_ask.py', 'e2e_onboarding.py', 'visual_onboarding.py', 'mascot_check.py', 'night_check.py']
 DEFAULT_PORT = 8090
 
 # 中文说明，汇总时更好读
@@ -31,6 +31,8 @@ LABELS = {
     'e2e_m4.py': 'M4 健康 tab',
     'e2e_m5.py': 'M5 一键摘要（给医生 / 给奶奶）',
     'e2e_ask.py': 'M5 问团子界面（紧急卡 / 未登录 / 视觉对比）',
+    'e2e_onboarding.py': '首次使用流程（注册 / 登录 / 新建宝宝 / 邀请码 / 空首页 / 注销 / 示例只读）',
+    'visual_onboarding.py': '首次使用流程 每页 日间 + 夜间 vs 原型 #onboarding',
     'mascot_check.py': '团团动画：Web 实现 vs 原生实现',
     'night_check.py': '夜间模式星星',
 }
