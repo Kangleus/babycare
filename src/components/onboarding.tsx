@@ -108,10 +108,10 @@ function SegBig<T extends string>({ opts, value, onChange, testID }: { opts: { k
 }
 
 /** .ob-step：带编号徽章的一步（原型：黄色方块 b + 说明，虚线分隔） */
-function ObStep({ n, t, first }: { n: number; t: string; first?: boolean }) {
+function ObStep({ n, t, first, testID }: { n: number; t: string; first?: boolean; testID?: string }) {
   const { p } = useApp();
   return (
-    <View style={[s.step, first ? null : { borderTopWidth: 2, borderStyle: 'dashed', borderTopColor: p.line }]}>
+    <View testID={testID} style={[s.step, first ? null : { borderTopWidth: 2, borderStyle: 'dashed', borderTopColor: p.line }]}>
       <View style={[s.stepB, { backgroundColor: p.yellow, borderColor: p.ink }]}><Txt f="b9" size={12.5}>{n}</Txt></View>
       <Txt f="b9" size={13} style={{ flex: 1, lineHeight: 19 }}>{t}</Txt>
     </View>
@@ -122,9 +122,9 @@ function ObStep({ n, t, first }: { n: number; t: string; first?: boolean }) {
 function ObMail({ mail }: { mail: string }) {
   const { p } = useApp();
   return (
-    <View style={{ alignItems: 'center', marginTop: 4 }}>
+    <View style={{ alignItems: 'center' }}>
       <View style={{ backgroundColor: p.yellowS, borderRadius: 10, paddingHorizontal: 6, paddingVertical: 1 }}>
-        <Txt f="b9" size={15} style={{ wordBreak: 'break-all' } as object}>{mail}</Txt>
+        <Txt f="b9" size={15} style={{ wordBreak: 'break-all', lineHeight: 20 } as object}>{mail}</Txt>
       </View>
     </View>
   );
@@ -253,10 +253,10 @@ export function AuthPage({ onBack, onVerify, onForgot, initialMode = 'up', prefi
       <SegBig testID="ob-mode" opts={[{ k: 'in', t: '登录' }, { k: 'up', t: '注册' }]} value={mode} onChange={m => { setMode(m); setErr({}); setBanner(null); }} />
       <FullCard>
         <Fl>邮箱</Fl>
-        <Inp h={38} testID="ob-email" value={email} onChangeText={setEmail} placeholder="name@example.com" keyboardType="email-address" autoCapitalize="none" autoCorrect={false} autoComplete="email" textContentType="emailAddress" onSubmitEditing={submit} />
+        <Inp h={38} bg={p.bg} testID="ob-email" value={email} onChangeText={setEmail} placeholder="name@example.com" keyboardType="email-address" autoCapitalize="none" autoCorrect={false} autoComplete="email" textContentType="emailAddress" onSubmitEditing={submit} />
         <ErrLine msg={err.email} />
         <Fl style={{ marginTop: 14 }}>{up ? '设置密码' : '密码'}</Fl>
-        <Inp h={38} testID="ob-pw" value={pw} onChangeText={setPw} placeholder="至少 6 位" secureTextEntry autoCapitalize="none" autoComplete={up ? 'new-password' : 'password'} textContentType={up ? 'newPassword' : 'password'} onSubmitEditing={submit} />
+        <Inp h={38} bg={p.bg} testID="ob-pw" value={pw} onChangeText={setPw} placeholder="至少 6 位" secureTextEntry autoCapitalize="none" autoComplete={up ? 'new-password' : 'password'} textContentType={up ? 'newPassword' : 'password'} onSubmitEditing={submit} />
         <ErrLine msg={err.pw?.trim() ? err.pw : undefined} />
         {up ? (
           <>
@@ -300,13 +300,13 @@ export function VerifyPage({ email, onGoLogin, onBack }: { email: string; onGoLo
     <FullPage bg={p.green} title="验证邮箱" onClose={onBack} closeIcon="chev" closeLabel="返回" testID="ob-verify">
       <View style={s.hs}><Tuan mood="happy" acc={['book']} size={150} /></View>
       <View style={{ alignItems: 'center', marginBottom: 12 }}>
-        <Txt f="b9" size={14} style={{ textAlign: 'center' }}>验证邮件已发到</Txt>
+        <Txt f="b9" size={14} style={{ textAlign: 'center', lineHeight: 20 }}>验证邮件已发到</Txt>
         <ObMail mail={email} />
       </View>
       <FullCard>
-        <ObStep n={1} t="打开邮箱，找到「团子育儿本」发来的邮件" first />
-        <ObStep n={2} t="点邮件里的「验证邮箱」链接" />
-        <ObStep n={3} t="回到这里，用邮箱和密码登录" />
+        <ObStep n={1} t="打开邮箱，找到「团子育儿本」发来的邮件" first testID="ob-step-1" />
+        <ObStep n={2} t="点邮件里的「验证邮箱」链接" testID="ob-step-2" />
+        <ObStep n={3} t="回到这里，用邮箱和密码登录" testID="ob-step-3" />
         <NoteS>没找到？看看垃圾邮件箱，或者等 1 分钟再重新发送</NoteS>
       </FullCard>
       <GoBtn testID="ob-verified" label="我已验证，去登录" icon="check" onPress={onGoLogin} />
@@ -338,9 +338,9 @@ export function ForgotPage({ onBack }: { onBack: () => void }) {
         <View style={s.hs}><Tuan mood="happy" acc={['book']} size={150} /></View>
         <Txt f="b9" size={14} style={{ textAlign: 'center', marginBottom: 12 }}>去邮箱看看吧～</Txt>
         <FullCard>
-          <ObStep n={1} t="打开邮件，点「重置密码」" first />
-          <ObStep n={2} t="App 会自动打开「设置新密码」" />
-          <ObStep n={3} t="设好后用新密码登录" />
+          <ObStep n={1} t="打开邮件，点「重置密码」" first testID="ob-step-1" />
+          <ObStep n={2} t="App 会自动打开「设置新密码」" testID="ob-step-2" />
+          <ObStep n={3} t="设好后用新密码登录" testID="ob-step-3" />
         </FullCard>
         <GoBtn testID="ob-back-login" label="回到登录" icon="user" onPress={onBack} />
       </FullPage>
@@ -352,7 +352,7 @@ export function ForgotPage({ onBack }: { onBack: () => void }) {
       <Txt f="b9" size={14} style={{ textAlign: 'center', marginBottom: 12 }}>别着急，用注册邮箱重置一下</Txt>
       <FullCard>
         <Fl>注册时用的邮箱</Fl>
-        <Inp h={38} testID="ob-forgot-email" value={email} onChangeText={setEmail} placeholder="name@example.com" keyboardType="email-address" autoCapitalize="none" autoCorrect={false} onSubmitEditing={send} />
+        <Inp h={38} bg={p.bg} testID="ob-forgot-email" value={email} onChangeText={setEmail} placeholder="name@example.com" keyboardType="email-address" autoCapitalize="none" autoCorrect={false} onSubmitEditing={send} />
         <ErrLine msg={err} />
         <NoteS>我们会发一封重置邮件，点里面的链接就能设置新密码</NoteS>
       </FullCard>
@@ -382,9 +382,9 @@ export function SetPwPage({ from, onDone }: { from: 'recovery' | 'me'; onDone: (
       <View style={s.hs}><Tuan mood="idle" acc={['cap']} size={150} /></View>
       <FullCard>
         <Fl>新密码</Fl>
-        <Inp h={38} testID="ob-pw-new" value={pw} onChangeText={setPw} placeholder="至少 6 位" secureTextEntry autoCapitalize="none" />
+        <Inp h={38} bg={p.bg} testID="ob-pw-new" value={pw} onChangeText={setPw} placeholder="至少 6 位" secureTextEntry autoCapitalize="none" />
         <Fl style={{ marginTop: 14 }}>再输一次</Fl>
-        <Inp h={38} testID="ob-pw-new2" value={pw2} onChangeText={setPw2} placeholder="两次要一样" secureTextEntry autoCapitalize="none" onSubmitEditing={save} />
+        <Inp h={38} bg={p.bg} testID="ob-pw-new2" value={pw2} onChangeText={setPw2} placeholder="两次要一样" secureTextEntry autoCapitalize="none" onSubmitEditing={save} />
         <ErrLine msg={err} />
       </FullCard>
       <GoBtn testID="ob-pw-save" label={busy ? '保存中…' : '保存新密码'} icon="check" disabled={busy} onPress={save} />
@@ -448,7 +448,7 @@ const s = StyleSheet.create({
   iconbtn: { width: 42, height: 42, borderRadius: 15, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center' },
   obTop: { flexDirection: 'row', justifyContent: 'flex-end', height: 42 },
   feats: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 18 },
-  feat: { width: '47.6%', flexDirection: 'row', gap: 8, alignItems: 'center', borderWidth: 2.5, borderRadius: 22, padding: 10, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 1, shadowRadius: 0, elevation: 3 },
+  feat: { width: 170, flexDirection: 'row', gap: 8, alignItems: 'center', borderWidth: 2.5, borderRadius: 22, padding: 10, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 1, shadowRadius: 0, elevation: 3 },
   featIc: { width: 36, height: 36, borderRadius: 13, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   banner: { borderWidth: 2.5, borderStyle: 'dashed', borderRadius: 18, paddingVertical: 10, paddingHorizontal: 12, marginBottom: 12 },
   segbig: { flexDirection: 'row', borderWidth: 2.5, borderRadius: 99, padding: 4, marginBottom: 14, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 1, shadowRadius: 0, elevation: 3 },
