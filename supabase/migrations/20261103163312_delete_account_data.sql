@@ -5,7 +5,7 @@
 --   3) 返回计数（只有数字，不含任何个人信息），供函数日志使用。
 -- 只能删「自己」：uid 取自 auth.uid()，不接受参数。可重复调用（第二次什么都不删）。
 -- 旧的 delete_account() 保留（老版本 App 还在用）。
--- ⚠️ 只写文件待审核，不要直接应用到线上库。
+-- 已应用到线上库 2026-11-04（版本号与线上 supabase_migrations 一致）。
 
 create or replace function private.delete_account_data() returns jsonb
 language plpgsql security definer set search_path = '' as $$

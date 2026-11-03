@@ -2,7 +2,7 @@
 -- 以前是 create_family 之后客户端再 upsert babies，中途断网会出现「有家庭、没宝宝」。
 -- 约定和 create_family 一致：definer 放 private，public 里只放 invoker 薄包装；只给 authenticated 执行。
 -- 旧的 create_family 保留（老版本 App 还在用）。
--- ⚠️ 只写文件待审核，不要直接应用到线上库。
+-- 已应用到线上库 2026-11-04（版本号与线上 supabase_migrations 一致）。
 
 create or replace function private.create_family_with_baby(p_name text, p_display_name text, p_baby jsonb)
 returns table (family_id uuid, baby_id text)
