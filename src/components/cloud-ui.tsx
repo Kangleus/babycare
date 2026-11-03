@@ -64,14 +64,14 @@ export function LoginPage({ onClose, onDone }: { onClose: () => void; onDone: ()
 }
 
 /* —— 登录后还没有家庭：创建我们家 / 有邀请码去加入 —— */
-export function FamilySetupPage({ onClose, onJoin }: { onClose: () => void; onJoin: () => void }) {
+export function FamilySetupPage({ onClose, onJoin, carryLocal = true }: { onClose: () => void; onJoin: () => void; carryLocal?: boolean }) {
   const { p, records } = useApp();
   const c = useCloud();
   const [rel, setRel] = useState('妈妈');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
   const real = records.filter(r => !isDemo(r.id)).length;
-  const create = async () => { setBusy(true); setErr(''); try { await cloud.createFamily(rel); } catch (e) { setErr((e as Error).message); } setBusy(false); };
+  const create = async () => { setBusy(true); setErr(''); try { await cloud.createFamily(rel, carryLocal); } catch (e) { setErr((e as Error).message); } setBusy(false); };
   if (c.link) {
     return (
       <FullPage bg={p.green} title="和家人一起记" onClose={onClose} testID="family-page">
@@ -88,7 +88,7 @@ export function FamilySetupPage({ onClose, onJoin }: { onClose: () => void; onJo
       <FullCard>
         <Fl>你是宝宝的？</Fl>
         <Rel v={rel} on={setRel} />
-        <NoteS>{real ? `本机的 ${real} 条记录会上传到新家庭（演示数据不会上传）` : '演示数据不会上传到云端'}</NoteS>
+        {carryLocal ? <NoteS>{real ? `本机的 ${real} 条记录会上传到新家庭（演示数据不会上传）` : '演示数据不会上传到云端'}</NoteS> : null}
         {err ? <Txt f="b9" size={12.5} color={errColor} style={{ marginTop: 8 }}>{err}</Txt> : null}
       </FullCard>
       <GoBtn testID="family-create" label={busy ? '请稍候…' : '创建我们家'} icon="family" disabled={busy || c.status !== 'noFamily'} onPress={create} />
