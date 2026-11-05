@@ -1,7 +1,7 @@
 /* 原型通用组件的 RN 版：.sheet .heard .btn .actions .stepper .seg .editor .rc .risk .hgroup .toggle .list .li .inp
    数值逐条取自 index.html（行号见注释），不做二次设计 */
 import { ReactNode } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, TextInput, TextInputProps, View, ViewStyle } from 'react-native';
+import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, TextInput, TextInputProps, View, ViewStyle } from 'react-native';
 import { Icon, Tuan } from '@/lib/svg';
 import type { IconName, Mood } from '@/lib/art';
 import { useApp } from '@/state/app-state';
@@ -255,7 +255,8 @@ export function FullPage({ bg, title, onClose, children, testID, closeIcon = 'x'
   return (
     <View testID={testID} style={[fs.full, { backgroundColor: bg }]}>
       <InkCtx.Provider value={ob && night ? '#2a1f16' : null}>
-        <ScrollView contentContainerStyle={[fs.pad, grow && { flexGrow: 1 }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets contentContainerStyle={[fs.pad, grow && { flexGrow: 1 }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           <Blobs />
           {title || onClose ? <View style={fs.bar}>
             {onClose ? <Pressable testID="full-close" accessibilityLabel={ob ? '返回' : closeLabel} onPress={onClose} style={({ pressed }) => [fs.iconbtn, { backgroundColor: p.card, borderColor: p.ink }, pressed ? { transform: [{ translateY: 3 }] } : hard(p, 3)]}><Icon name={icon} size={ob ? 20 : 18} color={p.ink} style={!ob && closeIcon === 'chev' ? { transform: [{ rotate: '180deg' }] } : undefined} /></Pressable> : <View style={{ width: 42 }} />}
@@ -264,6 +265,7 @@ export function FullPage({ bg, title, onClose, children, testID, closeIcon = 'x'
           </View> : null}
           {children}
         </ScrollView>
+        </KeyboardAvoidingView>
       </InkCtx.Provider>
     </View>
   );

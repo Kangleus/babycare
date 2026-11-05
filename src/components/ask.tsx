@@ -3,7 +3,7 @@
    .fb .risk .recent .mini-btn .typing .askbar .chips .inp（373–414、1168–1203）。
    对话只存在内存里：切 Tab 保留（模块级 STORE），App 重启即清空。 */
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, ScrollView, ScrollViewInstance, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, ScrollViewInstance, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Icon, Tuan } from '@/lib/svg';
 import { useApp } from '@/state/app-state';
 import { askLocalUrgent, askReady, askRemote, demoAnswer, localUrgentCard, type AskAnswer, type AskMsg } from '@/lib/ask-api';
@@ -29,6 +29,12 @@ export function AskPage({ onSummary }: { onSummary: (aud?: 'doctor' | 'granny') 
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
   const sref = useRef<ScrollViewInstance | null>(null);
+  const [kb, setKb] = useState(false);
+  useEffect(() => {
+    const a = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow', () => { setKb(true); setTimeout(() => sref.current?.scrollToEnd({ animated: true }), 60); });
+    const b = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide', () => setKb(false));
+    return () => { a.remove(); b.remove(); };
+  }, []);
 
   useEffect(() => { const t = setTimeout(() => sref.current?.scrollToEnd({ animated: true }), 60); return () => clearTimeout(t); }, [msgs]);
 
@@ -107,8 +113,8 @@ export function AskPage({ onSummary }: { onSummary: (aud?: 'doctor' | 'granny') 
   ].map(x => ({ ...x, q: x.q.replace(/^他/, baby.gender === 'girl' ? '她' : '他') }));
 
   return (
-    <View style={{ flex: 1 }} testID="ask-page">
-      <ScrollView ref={sref} style={{ flex: 1 }} contentContainerStyle={{ paddingTop: top, paddingHorizontal: 18, paddingBottom: 240 }} showsVerticalScrollIndicator={false}>
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} testID="ask-page">
+      <ScrollView ref={sref} style={{ flex: 1 }} contentContainerStyle={{ paddingTop: top, paddingHorizontal: 18, paddingBottom: kb ? 150 : 240 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         {/* .ai-h：头像 + 标题 + 副标 + 一键摘要 */}
         <View style={s.aih}>
           <View style={[s.av, { backgroundColor: p.blueS, borderColor: p.ink }, hard(p, 3)]}><Tuan mood="idle" acc={['book']} size={52} /></View>
@@ -139,7 +145,7 @@ export function AskPage({ onSummary }: { onSummary: (aud?: 'doctor' | 'granny') 
       </ScrollView>
 
       {/* .askbar：建议问题 + 输入框 */}
-      <View style={[s.askbar, { backgroundColor: p.bg }]}>
+      <View style={[s.askbar, { backgroundColor: p.bg }, kb && { bottom: 0 }]}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chips}>
           {QS.map((c, i) => (
             <Pressable key={i} testID={`ask-chip-${i}`} disabled={sending} onPress={() => send(c.q)}
@@ -160,7 +166,7 @@ export function AskPage({ onSummary }: { onSummary: (aud?: 'doctor' | 'granny') 
           </Pressable>
         </View>
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

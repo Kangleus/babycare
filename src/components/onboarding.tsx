@@ -438,8 +438,8 @@ export function OnboardingFlow() {
 const s = StyleSheet.create({
   iconbtn: { width: 42, height: 42, borderRadius: 15, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center' },
   obTop: { flexDirection: 'row', justifyContent: 'flex-end', height: 42 },
-  feats: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 18 },
-  feat: { width: 170, flexDirection: 'row', gap: 8, alignItems: 'center', borderWidth: 2.5, borderRadius: 22, padding: 10, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 1, shadowRadius: 0, elevation: 3 },
+  feats: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 10, marginTop: 18, width: '100%', maxWidth: 420, alignSelf: 'center' },
+  feat: { width: '48.5%', flexDirection: 'row', gap: 8, alignItems: 'center', borderWidth: 2.5, borderRadius: 22, padding: 10, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 1, shadowRadius: 0, elevation: 3 },
   featIc: { width: 36, height: 36, borderRadius: 13, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   banner: { borderWidth: 2.5, borderStyle: 'dashed', borderRadius: 18, paddingVertical: 9, paddingHorizontal: 12, marginTop: 2, marginBottom: 14 },
   bannerT: { flexDirection: 'row', gap: 6, alignItems: 'center' },
